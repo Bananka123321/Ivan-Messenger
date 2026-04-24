@@ -1,0 +1,84 @@
+#include "../include/Handler.h"
+
+Handler::Handler(SessionManager& sm) : sessionManager(sm), dispatcher(sessionManager), userManager("dbname=chat_app user=ivan password=12345 host=localhost") {
+    handlers["loginRequest"] = [this](std::shared_ptr<ClientSession> client, const nlohmann::json& j) {
+        loginRequest(client, j);
+    };
+
+    handlers["registerRequest"] = [this](std::shared_ptr<ClientSession> client, const nlohmann::json& j) {
+        registerRequest(client, j);
+    };
+
+    handlers["privateMessage"] = [this](std::shared_ptr<ClientSession> client, const nlohmann::json& j) {
+        privateMessage(client, j);
+    };
+}
+
+Handler::~Handler() {}
+
+void Handler::handleMessage(std::shared_ptr<ClientSession> client, std::string& msg) {
+    try {
+        auto j = nlohmann::json::parse(msg);
+        std::string type = j["type"];
+        if (handlers.find(type) != handlers.end()) {
+            handlers[type](client, j);
+        }
+        else
+            std::cerr << "Unknown message type " << type << std::endl;    
+
+    } catch (const std::exception& e) {
+        std::cerr << "JSON parse ERROR " << e.what() << std::endl;
+    }
+}
+
+
+
+//============================================================================================================================
+
+
+
+void Handler::loginRequest(std::shared_ptr<ClientSession> client, const nlohmann::json& j) {
+    auto res = userManager.loginUser(j["username"], j["password"]);
+    std::string response = protocol::loginResponse(res.success, res.user_id, j["username"], res.error);
+    dispatcher.sendTo(client, response);
+
+    if (!res.success) return;
+
+    authSuccess(client, j["username"]);
+}
+
+void Handler::registerRequest(std::shared_ptr<ClientSession> client, const nlohmann::json& j) {
+    auto res = userManager.registerUser(j["username"],j["password"]);
+    std::string response = protocol::registerResponse(res.success, res.user_id, j["username"], res.error);
+    dispatcher.sendTo(client, response);
+
+    if (!res.success) return;
+
+    authSuccess(client, j["username"]);
+}
+
+void Handler::authSuccess(std::shared_ptr<ClientSession> client, const std::string& username) {
+    client->setUsername(username);
+    sessionManager.add(client);
+
+    auto allClients = sessionManager.getAll();
+
+    std::vector<std::string> usernames;
+    for (auto& c : allClients)
+        usernames.push_back(c->getUsername());
+
+    std::string listMsg = protocol::userList(usernames);
+
+    dispatcher.broadcast(listMsg);
+}
+
+void Handler::privateMessage(std::shared_ptr<ClientSession> client, const nlohmann::json& j) {
+    auto receiver = sessionManager.getByUsername(j["to"]);
+    if (!receiver) return;
+
+    receiver->send(j.dump());
+}
+
+void Handler::setDisconnectHandler(std::function<void(std::shared_ptr<ClientSession>)> cb) {
+    dispatcher.onDisconnect = cb;
+}

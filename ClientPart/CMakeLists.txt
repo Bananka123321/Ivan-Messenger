@@ -1,0 +1,64 @@
+cmake_minimum_required(VERSION 3.5)
+project(Client)
+
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
+
+set(CLIENT_SOURCES
+    main.cpp
+    Network/tcp_client.cpp
+    Network/MessageRouter.cpp
+
+    App/AppState.cpp
+    App/Handler.cpp
+    App/appcontroller.cpp
+    App/StateBinder.cpp
+
+    UI/loginwindow.cpp
+    UI/mainwindow.cpp
+    UI/uicontroller.cpp
+
+    ../common/PacketIO.cpp
+)
+
+set(CLIENT_HEADERS
+    Network/tcp_client.h
+    Network/MessageRouter.h
+
+    App/AppState.h
+    App/Handler.h
+    App/appcontroller.h
+    App/StateBinder.h
+
+    UI/loginwindow.h
+    UI/mainwindow.h
+    UI/uicontroller.h
+
+    ../common/PacketIO.h
+)
+
+qt_add_executable(Client
+    ${CLIENT_SOURCES}
+    ${CLIENT_HEADERS}
+
+    UI/loginwindow.ui
+    UI/mainwindow.ui
+)
+
+target_include_directories(Client PRIVATE
+    Network
+    App
+    UI
+    ../common
+)
+
+target_link_libraries(Client PRIVATE
+    Qt6::Widgets
+)
+
+if (WIN32)
+    target_link_libraries(Client PRIVATE ws2_32)
+endif()

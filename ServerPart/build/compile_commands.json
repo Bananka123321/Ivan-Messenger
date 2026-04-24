@@ -1,0 +1,50 @@
+[
+{
+  "directory": "/home/user/PROJECTS/ServerPart/build",
+  "command": "/usr/bin/g++  -I/home/user/PROJECTS/ServerPart/include -I/home/user/PROJECTS/ServerPart/../common -g -o CMakeFiles/Server.dir/src/main.cpp.o -c /home/user/PROJECTS/ServerPart/src/main.cpp",
+  "file": "/home/user/PROJECTS/ServerPart/src/main.cpp",
+  "output": "CMakeFiles/Server.dir/src/main.cpp.o"
+},
+{
+  "directory": "/home/user/PROJECTS/ServerPart/build",
+  "command": "/usr/bin/g++  -I/home/user/PROJECTS/ServerPart/include -I/home/user/PROJECTS/ServerPart/../common -g -o CMakeFiles/Server.dir/src/TCPServer.cpp.o -c /home/user/PROJECTS/ServerPart/src/TCPServer.cpp",
+  "file": "/home/user/PROJECTS/ServerPart/src/TCPServer.cpp",
+  "output": "CMakeFiles/Server.dir/src/TCPServer.cpp.o"
+},
+{
+  "directory": "/home/user/PROJECTS/ServerPart/build",
+  "command": "/usr/bin/g++  -I/home/user/PROJECTS/ServerPart/include -I/home/user/PROJECTS/ServerPart/../common -g -o CMakeFiles/Server.dir/src/UserManager.cpp.o -c /home/user/PROJECTS/ServerPart/src/UserManager.cpp",
+  "file": "/home/user/PROJECTS/ServerPart/src/UserManager.cpp",
+  "output": "CMakeFiles/Server.dir/src/UserManager.cpp.o"
+},
+{
+  "directory": "/home/user/PROJECTS/ServerPart/build",
+  "command": "/usr/bin/g++  -I/home/user/PROJECTS/ServerPart/include -I/home/user/PROJECTS/ServerPart/../common -g -o CMakeFiles/Server.dir/src/ClientSession.cpp.o -c /home/user/PROJECTS/ServerPart/src/ClientSession.cpp",
+  "file": "/home/user/PROJECTS/ServerPart/src/ClientSession.cpp",
+  "output": "CMakeFiles/Server.dir/src/ClientSession.cpp.o"
+},
+{
+  "directory": "/home/user/PROJECTS/ServerPart/build",
+  "command": "/usr/bin/g++  -I/home/user/PROJECTS/ServerPart/include -I/home/user/PROJECTS/ServerPart/../common -g -o CMakeFiles/Server.dir/src/Handler.cpp.o -c /home/user/PROJECTS/ServerPart/src/Handler.cpp",
+  "file": "/home/user/PROJECTS/ServerPart/src/Handler.cpp",
+  "output": "CMakeFiles/Server.dir/src/Handler.cpp.o"
+},
+{
+  "directory": "/home/user/PROJECTS/ServerPart/build",
+  "command": "/usr/bin/g++  -I/home/user/PROJECTS/ServerPart/include -I/home/user/PROJECTS/ServerPart/../common -g -o CMakeFiles/Server.dir/src/SessionManager.cpp.o -c /home/user/PROJECTS/ServerPart/src/SessionManager.cpp",
+  "file": "/home/user/PROJECTS/ServerPart/src/SessionManager.cpp",
+  "output": "CMakeFiles/Server.dir/src/SessionManager.cpp.o"
+},
+{
+  "directory": "/home/user/PROJECTS/ServerPart/build",
+  "command": "/usr/bin/g++  -I/home/user/PROJECTS/ServerPart/include -I/home/user/PROJECTS/ServerPart/../common -g -o CMakeFiles/Server.dir/src/MessageDispatcher.cpp.o -c /home/user/PROJECTS/ServerPart/src/MessageDispatcher.cpp",
+  "file": "/home/user/PROJECTS/ServerPart/src/MessageDispatcher.cpp",
+  "output": "CMakeFiles/Server.dir/src/MessageDispatcher.cpp.o"
+},
+{
+  "directory": "/home/user/PROJECTS/ServerPart/build",
+  "command": "/usr/bin/g++  -I/home/user/PROJECTS/ServerPart/include -I/home/user/PROJECTS/ServerPart/../common -g -o CMakeFiles/Server.dir/home/user/PROJECTS/common/PacketIO.cpp.o -c /home/user/PROJECTS/common/PacketIO.cpp",
+  "file": "/home/user/PROJECTS/common/PacketIO.cpp",
+  "output": "CMakeFiles/Server.dir/home/user/PROJECTS/common/PacketIO.cpp.o"
+}
+]
