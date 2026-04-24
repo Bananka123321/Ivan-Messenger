@@ -1,3 +1,0 @@
-/home/user/PROJECTS/ServerPart/build/CMakeFiles/Server.dir
-/home/user/PROJECTS/ServerPart/build/CMakeFiles/edit_cache.dir
-/home/user/PROJECTS/ServerPart/build/CMakeFiles/rebuild_cache.dir

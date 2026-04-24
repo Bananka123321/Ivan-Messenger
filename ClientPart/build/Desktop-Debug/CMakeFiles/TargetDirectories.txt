@@ -1,5 +1,0 @@
-/home/user/PROJECTS/ClientPart/build/Desktop-Debug/CMakeFiles/Client.dir
-/home/user/PROJECTS/ClientPart/build/Desktop-Debug/CMakeFiles/edit_cache.dir
-/home/user/PROJECTS/ClientPart/build/Desktop-Debug/CMakeFiles/rebuild_cache.dir
-/home/user/PROJECTS/ClientPart/build/Desktop-Debug/CMakeFiles/Client_autogen_timestamp_deps.dir
-/home/user/PROJECTS/ClientPart/build/Desktop-Debug/CMakeFiles/Client_autogen.dir

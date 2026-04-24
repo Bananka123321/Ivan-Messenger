@@ -1,6 +1,5 @@
-/build/
-/CMakeCache.txt
-/CMakeFiles/
-/Makefile
+build/
+CMakeFiles/
+CMakeCache.txt
+Makefile
 .vscode/
-/GUI/build/
