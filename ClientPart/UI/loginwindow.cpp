@@ -2,11 +2,11 @@
 #include "ui_loginwindow.h"
 
 
-LoginWindow::LoginWindow(QWidget *parent, MessageRouter* router)
-    : QDialog(parent), ui(new Ui::LoginWindow), router(router) {
+LoginWindow::LoginWindow(QWidget *parent_, MessageRouter* router_)
+    : QDialog(parent_), ui(new Ui::LoginWindow), router(router_) {
     ui->setupUi(this);
 
-    connect(ui->okButton, &QPushButton::clicked, this, [this, router]() {
+    connect(ui->okButton, &QPushButton::clicked, this, [this]() {
         login = ui->loginField->text().toStdString();
         std::string password = ui->passwordField->text().toStdString();
 
@@ -15,7 +15,7 @@ LoginWindow::LoginWindow(QWidget *parent, MessageRouter* router)
         emit loginRequest(login, password);
     });
 
-    connect(ui->okButton_2, &QPushButton::clicked, this, [this, router]() {
+    connect(ui->okButton_2, &QPushButton::clicked, this, [this]() {
         login = ui->loginRegField->text().toStdString();
         std::string password = ui->passwordRegField->text().toStdString();
 

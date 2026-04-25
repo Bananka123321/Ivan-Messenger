@@ -2,8 +2,10 @@
 
 #include <QMainWindow>
 #include <unordered_map>
+
 #include "Handler.h"
 #include "AppState.h"
+#include "DialogManager.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -16,7 +18,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent, AppState* state, Handler* ctrl);
+    MainWindow(QWidget *parent_, AppState* state_, DialogManager* mnager_);
     ~MainWindow();
 
     void newMessage(int sender, const std::string& text);
@@ -27,11 +29,13 @@ signals:
 private:
     Ui::MainWindows *ui;
 
-    Handler* handler;
     AppState* state;
+    DialogManager* manager;
 
     int selectedUserId = -1;
-    std::unordered_map<int, std::vector<std::string>> chats;
 
-    void updateUsers(const std::unordered_map<int, std::string>& users);
+    void refreshDialogs();
+    void refreshCurrentChat();
+
+    void updateSingleDialog(int peerId);
 };

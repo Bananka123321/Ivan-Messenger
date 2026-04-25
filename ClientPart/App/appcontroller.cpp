@@ -1,6 +1,6 @@
 #include "appcontroller.h"
 
-AppController::AppController(MessageRouter* router, AppState* state) : router(router), state(state) {}
+AppController::AppController(MessageRouter* router_, AppState* state_) : router(router_), state(state_) {}
 
 void AppController::AttachUI(MainWindow* mainW, LoginWindow* loginW) {
     connect(mainW, &MainWindow::sendMessageRequest, this, [this](const int& to, const std::string& text) {

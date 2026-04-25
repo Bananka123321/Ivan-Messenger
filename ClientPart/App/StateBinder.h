@@ -8,7 +8,7 @@
 class StateChanger : public QObject {
     Q_OBJECT
 public:
-    StateChanger(Handler* handler, AppState* state);
+    StateChanger(Handler* handler_, AppState* state_);
 
 private:
     Handler* handler;

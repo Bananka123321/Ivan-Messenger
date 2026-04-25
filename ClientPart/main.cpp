@@ -4,6 +4,8 @@
 #include "uicontroller.h"
 #include "appcontroller.h"
 #include "StateBinder.h"
+#include "DialogManager.h"
+
 #include <QApplication>
 #include <QMetaObject>
 
@@ -14,7 +16,8 @@ int main(int argc, char *argv[]) {
     AppController* AController = new AppController(router, state);
     TCPClient* client = new TCPClient(6767, router);
     Handler* handler = new Handler();
-    UIController* controller = new UIController(router, state, handler, AController);
+    DialogManager* manager = new DialogManager(handler);
+    UIController* controller = new UIController(router, state, handler, AController, manager);
     StateChanger* binder = new StateChanger(handler, state);
 
     client->onMessage = [handler](const std::string& msg) {

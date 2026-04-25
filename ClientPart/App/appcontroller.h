@@ -10,7 +10,7 @@ class AppController : public QObject {
     Q_OBJECT
 
 public:
-    AppController(MessageRouter* router, AppState* state);
+    AppController(MessageRouter* router_, AppState* state_);
 
     void AttachUI(MainWindow* mainW, LoginWindow* loginW);
 
