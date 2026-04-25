@@ -49,10 +49,10 @@ void Handler::onRegisterResponse(const bool& success, const std::string& login, 
         emit S_registerFailed(reason);
 }
 
-void Handler::onUserList(const std::vector<std::string>& users) {
+void Handler::onUserList(const std::unordered_map<int, std::string>& users) {
     emit S_userList(users);
 }
 
-void Handler::onMessage(const std::string& from, const std::string& text) {
+void Handler::onMessage(const int& from, const std::string& text) {
     emit S_Message(from, text);
 }

@@ -16,7 +16,7 @@ void MessageRouter::registerRequest(const std::string& login, const std::string&
     sendPacket(request);
 }
 
-void MessageRouter::sendMessage(const std::string& from, const std::string& to, const std::string& text) {
+void MessageRouter::sendMessage(const int& from, const int& to, const std::string& text) {
     std::string request = protocol::privateMessage(from, to, text);
     sendPacket(request);
 }

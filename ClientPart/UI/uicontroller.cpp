@@ -30,7 +30,7 @@ void UIController::start() {
 
     mainW = new MainWindow(nullptr, state, handler);
 
-    connect(handler, &Handler::S_Message, this, [this](const std::string& sender, const std::string& text){
+    connect(handler, &Handler::S_Message, this, [this](const int& sender, const std::string& text){
         mainW->newMessage(sender, text);
     });
 

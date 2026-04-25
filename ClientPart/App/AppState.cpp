@@ -2,21 +2,21 @@
 
 AppState::AppState() {}
 
-void AppState::setUsers(const std::vector<std::string>& newUsers) {
-    users = std::move(newUsers);
+void AppState::setUsers(const std::unordered_map<int, std::string>& newUsers) {
+    users = newUsers;
     emit usersChanged(users);
 }
 
-const std::vector<std::string>& AppState::getUsers() const {
+const std::unordered_map<int, std::string>& AppState::getUsers() const {
     return users;
 }
 
-void AppState::setCurrentUser(const std::string& login) {
-    user.currentUser = login;
+void AppState::setCurrentUsername(const std::string& login) {
+    user.username = login;
 }
 
-const std::string& AppState::getCurrentUser() const {
-    return user.currentUser;
+const std::string& AppState::getCurrentUsername() const {
+    return user.username;
 }
 
 void AppState::setCurrentUserId(const int& user_id) {
@@ -25,4 +25,12 @@ void AppState::setCurrentUserId(const int& user_id) {
 
 const int& AppState::getCurrentUserId() const {
     return user.user_id;
+}
+
+const std::string AppState::getUsername(const int& id) const {
+    auto it = users.find(id);
+    if (it != users.end())
+        return it->second;
+
+    return "Unknown";
 }

@@ -19,10 +19,10 @@ public:
     MainWindow(QWidget *parent, AppState* state, Handler* ctrl);
     ~MainWindow();
 
-    void newMessage(const std::string& sender, const std::string& text);
+    void newMessage(int sender, const std::string& text);
 
 signals:
-    void sendMessageRequest(const std::string& to, const std::string& text);
+    void sendMessageRequest(const int& to, const std::string& text);
 
 private:
     Ui::MainWindows *ui;
@@ -30,8 +30,8 @@ private:
     Handler* handler;
     AppState* state;
 
-    std::string selectedUser;
-    std::unordered_map<std::string, std::vector<std::string>> chats;
+    int selectedUserId = -1;
+    std::unordered_map<int, std::vector<std::string>> chats;
 
-    void updateUsers(const std::vector<std::string>& users);
+    void updateUsers(const std::unordered_map<int, std::string>& users);
 };

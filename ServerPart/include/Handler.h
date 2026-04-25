@@ -24,5 +24,5 @@ private:
     void registerRequest(std::shared_ptr<ClientSession> client, const nlohmann::json& j);
     void privateMessage(std::shared_ptr<ClientSession> client, const nlohmann::json& j);
     
-    void authSuccess(std::shared_ptr<ClientSession> client, const std::string& username);
+    void authSuccess(std::shared_ptr<ClientSession> client, const int& id, const std::string& username);
 };
