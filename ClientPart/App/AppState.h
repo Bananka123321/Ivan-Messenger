@@ -1,35 +1,37 @@
 #pragma once
 
 #include <string>
-#include <vector>
 #include <QObject>
+#include <unordered_map>
 
 class AppState : public QObject {
     Q_OBJECT
 
 private:
     struct User {
-        std::string currentUser;
+        std::string username;
         int user_id;
     };
 
 public:
     AppState();
 
-    void setUsers(const std::vector<std::string>& newUsers);
-    const std::vector<std::string>& getUsers() const;
+    const std::unordered_map<int, std::string>& getUsers() const;
+    void setUsers(const std::unordered_map<int, std::string>& newUsers);
 
-    void setCurrentUser(const std::string& login);
-    const std::string& getCurrentUser() const;
+    const std::string& getCurrentUsername() const;
+    void setCurrentUsername(const std::string& login);
 
-    void setCurrentUserId(const int& user_id);
     const int& getCurrentUserId() const;
+    void setCurrentUserId(const int& user_id);
+
+    const std::string getUsername(const int& id) const;
 
     User user;
 
 signals:
-    void usersChanged(const std::vector<std::string>& users);
+    void usersChanged(const std::unordered_map<int, std::string>& users);
 
 private:
-    std::vector<std::string> users;
+    std::unordered_map<int, std::string> users;
 };

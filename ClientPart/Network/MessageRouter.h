@@ -10,7 +10,7 @@ public:
 
     void loginRequest(const std::string& login, const std::string& password);
     void registerRequest(const std::string& login, const std::string& password);
-    void sendMessage(const std::string& from, const std::string& to, const std::string& text);
+    void sendMessage(const int& from, const int& to, const std::string& text);
 
     void setSocket(int socket);
 

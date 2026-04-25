@@ -11,7 +11,7 @@ public:
     void add(std::shared_ptr<ClientSession> client);
     void remove(std::shared_ptr<ClientSession> client);
 
-    std::shared_ptr<ClientSession> getByUsername(const std::string& username);
+    std::shared_ptr<ClientSession> getByUserId(const int& user_id);
     std::vector<std::shared_ptr<ClientSession>> getAll();
 
 private:

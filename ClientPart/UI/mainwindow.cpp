@@ -7,25 +7,34 @@ MainWindow::MainWindow(QWidget *parent, AppState* state, Handler* handler)
 
     connect(ui->sendButton, &QPushButton::clicked, this, [this]() {
         QString text = ui->inputField->text();
-        if (text.isEmpty() || selectedUser.empty()) return;
+        if (text.isEmpty() || selectedUserId == -1) return;
 
-        chats[selectedUser].push_back("[You] " + text.toStdString());
+        chats[selectedUserId].push_back("[You] " + text.toStdString());
 
-        emit sendMessageRequest(selectedUser, text.toStdString());
+        emit sendMessageRequest(selectedUserId, text.toStdString());
 
         ui->chatView->append(QString::fromStdString("[You] " + text.toStdString()));
         ui->inputField->clear();
     });
 
-    connect(ui->userWidget, &QListWidget::itemClicked, this, [this](QListWidgetItem* item) {
-        selectedUser = item->text().toStdString();
-        ui->user->setText(item->text());
+    connect(ui->userWidget, &QListWidget::itemClicked, this, [this, state](QListWidgetItem* item) {
+        QVariant data = item->data(Qt::UserRole);
+
+        if (!data.isValid()) {
+            std::cerr << "ERROR: no user id in item\n";
+            return;
+        }
+
+        selectedUserId = data.toInt();
+        std::string name = state->getUsername(selectedUserId);
+
+        ui->user->setText(QString::fromStdString(name));
         ui->chatView->clear();
-        for (const auto& msg : chats[selectedUser])
+        for (const auto& msg : chats[selectedUserId])
             ui->chatView->append(QString::fromStdString(msg));
     });
 
-    connect(state, &AppState::usersChanged, this, [this](const std::vector<std::string>& users) {
+    connect(state, &AppState::usersChanged, this, [this](const std::unordered_map<int, std::string>& users) {
         updateUsers(users);
     });
 
@@ -36,18 +45,23 @@ MainWindow::~MainWindow() {
     delete ui;
 }
 
-void MainWindow::updateUsers(const std::vector<std::string>& users) {
+void MainWindow::updateUsers(const std::unordered_map<int, std::string>& users) {
     ui->userWidget->clear();
 
     for (auto& user : users) {
-        if (user == state->getCurrentUser()) continue;
-        ui->userWidget->addItem(QString::fromStdString(user));
+        if (user.first == state->getCurrentUserId()) continue;
+
+        QListWidgetItem* item = new QListWidgetItem(QString::fromStdString(user.second));
+        item->setData(Qt::UserRole, user.first);
+
+        ui->userWidget->addItem(item);
     }
 }
 
-void MainWindow::newMessage(const std::string& sender, const std::string& text) {
-    chats[sender].push_back("[" + sender + "] " + text);
+void MainWindow::newMessage(int sender, const std::string& text) {
+    std::string name = state->getUsername(sender);
+    chats[sender].push_back("[" + name + "] " + text);
 
-    if (selectedUser == sender)
-        ui->chatView->append(QString::fromStdString("[" + sender + "] " + text));
+    if (selectedUserId == sender)
+        ui->chatView->append(QString::fromStdString("[" + name + "] " + text));
 }

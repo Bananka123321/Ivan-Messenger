@@ -10,10 +10,10 @@ void SessionManager::remove(std::shared_ptr<ClientSession> client) {
         sessions.erase(std::remove(sessions.begin(), sessions.end(), client), sessions.end());
 }
 
-std::shared_ptr<ClientSession> SessionManager::getByUsername(const std::string& username) {
+std::shared_ptr<ClientSession> SessionManager::getByUserId(const int& user_id) {
     std::lock_guard<std::mutex> lock(mutex);
     for (auto& s : sessions)
-        if (s->getUsername() == username) return s;
+        if (s->getUserId() == user_id) return s;
     return nullptr;
 }
 std::vector<std::shared_ptr<ClientSession>> SessionManager::getAll() {

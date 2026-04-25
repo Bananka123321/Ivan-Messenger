@@ -2,21 +2,22 @@
 
 #include <nlohmann/json.hpp>
 #include <string>
+#include <unordered_map>
 
 namespace protocol {
 
 //      CHAT
 //=================================================================================================================================================================
 
-inline std::string broadcastMessage(const std::string& sender, const std::string& text) {
-    nlohmann::json j;
-    j["type"] = "broadcastMessage";
-    j["from"] = sender;
-    j["text"] = text;
-    return j.dump();
-}
+// inline std::string broadcastMessage(const std::string& sender, const std::string& text) {
+//     nlohmann::json j;
+//     j["type"] = "broadcastMessage";
+//     j["from"] = sender;
+//     j["text"] = text;
+//     return j.dump();
+// }
 
-inline std::string privateMessage(const std::string& sender, const std::string& user, const std::string& text) {
+inline std::string privateMessage(const int& sender, const int& user, const std::string& text) {
     nlohmann::json j;
     j["type"] = "privateMessage";
     j["text"] = text;
@@ -74,7 +75,7 @@ inline std::string registerResponse(const bool& success, const int& user_id, con
     return j.dump();
 }
 
-inline std::string userList(const std::vector<std::string>& users) {
+inline std::string userList(const std::unordered_map<int, std::string>& users) {
     nlohmann::json j;
     j["type"] = "userList";
     j["users"] = users;

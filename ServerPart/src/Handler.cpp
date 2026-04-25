@@ -44,7 +44,7 @@ void Handler::loginRequest(std::shared_ptr<ClientSession> client, const nlohmann
 
     if (!res.success) return;
 
-    authSuccess(client, j["username"]);
+    authSuccess(client, res.user_id, j["username"]);
 }
 
 void Handler::registerRequest(std::shared_ptr<ClientSession> client, const nlohmann::json& j) {
@@ -54,26 +54,27 @@ void Handler::registerRequest(std::shared_ptr<ClientSession> client, const nlohm
 
     if (!res.success) return;
 
-    authSuccess(client, j["username"]);
+    authSuccess(client, res.user_id, j["username"]);
 }
 
-void Handler::authSuccess(std::shared_ptr<ClientSession> client, const std::string& username) {
-    client->setUsername(username);
+void Handler::authSuccess(std::shared_ptr<ClientSession> client, const int& id, const std::string& username) {
+    client->setUser(id, username);
     sessionManager.add(client);
 
     auto allClients = sessionManager.getAll();
 
-    std::vector<std::string> usernames;
-    for (auto& c : allClients)
-        usernames.push_back(c->getUsername());
+    std::unordered_map<int, std::string> users;
 
-    std::string listMsg = protocol::userList(usernames);
+    for (auto& c : allClients)
+        users[c->getUserId()] = c->getUsername();
+
+    std::string listMsg = protocol::userList(users);
 
     dispatcher.broadcast(listMsg);
 }
 
 void Handler::privateMessage(std::shared_ptr<ClientSession> client, const nlohmann::json& j) {
-    auto receiver = sessionManager.getByUsername(j["to"]);
+    auto receiver = sessionManager.getByUserId(j["to"]);
     if (!receiver) return;
 
     receiver->send(j.dump());
