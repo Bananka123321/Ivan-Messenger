@@ -22,7 +22,7 @@ typedef SOCKET Socket;
 class TCPClient
 {
 public:
-    TCPClient(int port, MessageRouter* msgRouter);
+    TCPClient(int port_, MessageRouter* msgRouter_);
     ~TCPClient();
 
     bool start();

@@ -7,12 +7,13 @@
 #include "loginwindow.h"
 #include "MessageRouter.h"
 #include "appcontroller.h"
+#include "DialogManager.h"
 
 
 class UIController : public QObject {
     Q_OBJECT
 public:
-    UIController(MessageRouter* router, AppState* state, Handler* handler, AppController* ctrl);
+    UIController(MessageRouter* router_, AppState* state_, Handler* handler_, AppController* ctrl_, DialogManager* manager_);
 
     void start();
     void showMain();
@@ -25,4 +26,5 @@ private:
     MessageRouter* router;
     AppState* state;
     Handler* handler;
+    DialogManager* manager;
 };

@@ -14,7 +14,7 @@ class LoginWindow : public QDialog
     Q_OBJECT
 
 public:
-    explicit LoginWindow(QWidget *parent, MessageRouter* router);
+    explicit LoginWindow(QWidget *parent_, MessageRouter* router_);
     ~LoginWindow();
 
     void loginSuccess();

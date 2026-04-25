@@ -1,6 +1,6 @@
 #include "tcp_client.h"
 
-TCPClient::TCPClient(int port, MessageRouter* msgRouter) : port(port), clientSocket(-1), router(msgRouter) {}
+TCPClient::TCPClient(int port_, MessageRouter* msgRouter_) : port(port_), clientSocket(-1), router(msgRouter_) {}
 
 TCPClient::~TCPClient() {
     if (clientSocket != -1) {

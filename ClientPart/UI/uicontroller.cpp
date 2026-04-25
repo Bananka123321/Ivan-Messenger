@@ -1,7 +1,7 @@
 #include "uicontroller.h"
 
-UIController::UIController(MessageRouter* router, AppState* state, Handler* handler, AppController* ctrl)
-    : router(router), state(state), handler(handler), AController(ctrl) {}
+UIController::UIController(MessageRouter* router_, AppState* state_, Handler* handler_, AppController* ctrl_, DialogManager* manager_)
+    : router(router_), state(state_), handler(handler_), AController(ctrl_), manager(manager_) {}
 
 void UIController::start() {
     loginW = new LoginWindow(nullptr, router);
@@ -27,17 +27,13 @@ void UIController::start() {
     });
 
 
-
-    mainW = new MainWindow(nullptr, state, handler);
-
-    connect(handler, &Handler::S_Message, this, [this](const int& sender, const std::string& text){
-        mainW->newMessage(sender, text);
-    });
-
+    mainW = new MainWindow(nullptr, state, manager);
 
     AController->AttachUI(mainW, loginW);
 
     loginW->show();
+
+    manager->start();
 }
 
 void UIController::showMain() {
