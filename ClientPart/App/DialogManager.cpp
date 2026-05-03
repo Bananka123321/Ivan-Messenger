@@ -1,38 +1,44 @@
 #include "DialogManager.h"
 #include <QTimer>
 
-DialogManager::DialogManager(Handler* handler_) : handler(handler_) {}
+DialogManager::DialogManager(Handler* handler_, AppState* state_) : handler(handler_), state(state_) {}
 
 void DialogManager::start() {
-    connect(handler, &Handler::S_Message, this, [this](const int& sender, const std::string& text){
+    connect(handler, &Handler::S_Message, this, [this](const int& sender, const int& receiver, const std::string& text){
         Message msg;
+        msg.receiverId = receiver;
         msg.senderId = sender;
         msg.text = text;
 
         addMessage(msg);
     });
 
+    connect(handler, &Handler::S_UserSearch, this, [this](const std::vector<protocol::User>& users){
+        emit findUsers(users);
+    });
+
     emit dialogsUpdated();
 
-    Message m1{1, 0, "Hello from user 1"};
-    Message m2{2, 0, "Hello from user 2"};
-    Message m3{1, 0, "Second message"};
+    // Message m1{1, 0, "Hello from user 1"};
+    // Message m2{2, 0, "Hello from user 2"};
+    // Message m3{1, 0, "Second message"};
 
-    QTimer::singleShot(10000, this, [this]() {
-        addMessage({1, 0, "Hello from user 1"});
-    });
+    // QTimer::singleShot(10000, this, [this]() {
+    //     addMessage({1, 0, "Hello from user 1"});
+    // });
 
-    QTimer::singleShot(15000, this, [this]() {
-        addMessage({2, 0, "Hello from user 2"});
-    });
+    // QTimer::singleShot(15000, this, [this]() {
+    //     addMessage({2, 0, "Hello from user 2"});
+    // });
 
-    QTimer::singleShot(30000, this, [this]() {
-        addMessage({1, 0, "Second message"});
-    });
+    // QTimer::singleShot(30000, this, [this]() {
+    //     addMessage({1, 0, "Second message"});
+    // });
 }
 
-void DialogManager::addMessage(Message msg) {
-    int peerId = msg.senderId;
+void DialogManager::addMessage(const Message& msg) {
+    int myId = state->getCurrentUserId();
+    int peerId = (msg.senderId == myId) ? msg.receiverId : msg.senderId;
 
     Dialog& dialog = dialogs[peerId];
     dialog.peerId = peerId;
@@ -50,6 +56,6 @@ const std::unordered_map<int, Dialog>& DialogManager::getDialogs() const {
 const Dialog* DialogManager::getDialog(int peerId) const {
     auto it = dialogs.find(peerId);
     if(it != dialogs.end()) return &it->second;
-
     return nullptr;
 }
+

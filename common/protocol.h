@@ -6,6 +6,24 @@
 
 namespace protocol {
 
+    struct User {
+        int user_id;
+        std::string username;
+    };
+
+    inline void to_json(nlohmann::json& j, const User& u) {
+        j = {
+            {"user_id", u.user_id},
+            {"username", u.username}
+        };
+    }
+    
+    inline void from_json(const nlohmann::json& j, User& u) {
+        j.at("user_id").get_to(u.user_id);
+        j.at("username").get_to(u.username);
+    }
+
+    
 //      CHAT
 //=================================================================================================================================================================
 
@@ -45,9 +63,9 @@ inline std::string loginRequest(const std::string& nickname, const std::string& 
     return j.dump();
 }
 
-inline std::string checkUsernameRequest(const std::string& username) {
+inline std::string searchUserRequest(const std::string& username) {
     nlohmann::json j;
-    j["type"] = "checkUsernameRequest";
+    j["type"] = "searchUserRequest";
     j["username"] = username;
     return j.dump();
 }
@@ -86,6 +104,13 @@ inline std::string usernameAvailability(bool available) {
     nlohmann::json j;
     j["type"] = "usernameAvailability";
     j["available"] = available;
+    return j.dump();
+}
+
+inline std::string searchUserResponse(const std::vector<User>& result) {
+    nlohmann::json j;
+    j["type"] = "searchUserResponse";
+    j["result"] = result;
     return j.dump();
 }
 

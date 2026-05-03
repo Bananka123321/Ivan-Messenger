@@ -2,8 +2,7 @@
 
 bool UserManager::bUsernameAvailable(const std::string& username) {
     try {
-        pqxx::connection C(conn_str);
-        pqxx::work txn(C);
+        pqxx::work txn(conn);
         pqxx::result r = txn.exec("SELECT id FROM users WHERE username = " + txn.quote(username));
         return r.empty();
     } catch(const std::exception& e) {
@@ -17,8 +16,7 @@ UserManager::AuthResult UserManager::registerUser(const std::string& username, c
 
     std::string hashed = hashPassword(password);
     try {
-        pqxx::connection C(conn_str);
-        pqxx::work txn(C);
+        pqxx::work txn(conn);
         pqxx::result r = txn.exec("INSERT INTO users(username, password_hash) VALUES (" + txn.quote(username) + ", " + txn.quote(hashed) + ") RETURNING id");
         txn.commit();
         return {true, r[0]["id"].as<int>(), ""};
@@ -31,8 +29,7 @@ UserManager::AuthResult UserManager::registerUser(const std::string& username, c
 UserManager::AuthResult UserManager::loginUser(const std::string& username, const std::string& password) {
     std::string hashed = hashPassword(password);
     try {
-        pqxx::connection C(conn_str);
-        pqxx::work txn(C);
+        pqxx::work txn(conn);
         pqxx::result r = txn.exec("SELECT id, password_hash FROM users WHERE username = " + txn.quote(username));
         if (r.empty()) return {false, -1, "User not found"};
         
@@ -53,4 +50,23 @@ std::string UserManager::hashPassword(const std::string& password) {
     for (size_t i = 0; i < SHA256_DIGEST_LENGTH; i++)
         ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
     return ss.str();
+}
+
+std::vector<protocol::User> UserManager::searhUsers(const std::string& query) {
+    std::vector<protocol::User> result;
+
+    try {
+        pqxx::work txn(conn);
+
+        pqxx::result r = txn.exec("SELECT id, username FROM users WHERE username ILIKE " + txn.quote(query + "%") + " LIMIT 20");
+
+        for (auto row : r)
+            result.push_back({row["id"].as<int>(), row["username"].c_str()});
+
+        return result;
+
+    } catch(const std::exception& e) {
+        std::cerr << e.what() << '\n';
+        // return {-1, e.what()};
+    }
 }

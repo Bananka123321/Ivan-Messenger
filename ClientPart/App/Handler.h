@@ -4,6 +4,7 @@
 #include <QObject>
 #include <iostream>
 #include <unordered_map>
+#include "protocol.h"
 
 class Handler : public QObject{
     Q_OBJECT
@@ -19,7 +20,8 @@ private:
     void onLoginResponse(const bool& success, const std::string& login, const std::string& reason, const int& user_id);
     void onRegisterResponse(const bool& success, const std::string& login, const std::string& reason, const int& user_id);
     void onUserList(const std::unordered_map<int, std::string>& users);
-    void onMessage(const int& from, const std::string& text);
+    void onMessage(const int& from, const int& to, const std::string& text);
+    void onUserSearch(const std::vector<protocol::User>& users);
 
 signals:
     void S_loginSuccess(const std::string& login, const int& user_id);
@@ -28,7 +30,9 @@ signals:
     void S_registerSuccess(const std::string& login, const int& user_id);
     void S_registerFailed(const std::string& reason);
 
-    void S_Message(const int& sender, const std::string& text);
+    void S_Message(const int& sender, const int& receiver, const std::string& text);
     void S_userList(const std::unordered_map<int, std::string>& users);
+
+    void S_UserSearch(const std::vector<protocol::User>& users);
 
 };

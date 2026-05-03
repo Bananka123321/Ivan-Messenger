@@ -14,6 +14,10 @@ void AppController::AttachUI(MainWindow* mainW, LoginWindow* loginW) {
     connect(loginW, &LoginWindow::registerRequest, this, [this](const std::string& login, const std::string& password) {
         router->registerRequest(login, password);
     });
+
+    connect(mainW, &MainWindow::searchUser, this, [this](const std::string& text){
+        router->searchUser(text);
+    });
 }
 
 

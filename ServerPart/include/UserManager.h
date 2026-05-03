@@ -5,6 +5,7 @@
 #include <sstream>
 #include <iomanip>
 #include <iostream>
+#include "protocol.h"
 
 class UserManager {
     struct AuthResult {
@@ -14,13 +15,14 @@ class UserManager {
     };
 
 public:
-    UserManager(const std::string& conn_str) : conn_str(conn_str) {}
+    UserManager(const std::string& conn_str) : conn(conn_str) {}
     AuthResult registerUser(const std::string& username, const std::string& password);
     AuthResult loginUser(const std::string& username, const std::string& password);
     bool bUsernameAvailable(const std::string& username);
+    std::vector<protocol::User> searhUsers(const std::string& query);
 
 private:
-    std::string conn_str;
 
     std::string hashPassword(const std::string& password);
+    pqxx::connection conn;
 };
