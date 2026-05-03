@@ -12,6 +12,10 @@ Handler::Handler(SessionManager& sm) : sessionManager(sm), dispatcher(sessionMan
     handlers["privateMessage"] = [this](std::shared_ptr<ClientSession> client, const nlohmann::json& j) {
         privateMessage(client, j);
     };
+
+    handlers["searchUserRequest"] = [this](std::shared_ptr<ClientSession> client, const nlohmann::json& j) {
+        searchUserRequest(client, j);
+    };
 }
 
 Handler::~Handler() {}
@@ -82,4 +86,11 @@ void Handler::privateMessage(std::shared_ptr<ClientSession> client, const nlohma
 
 void Handler::setDisconnectHandler(std::function<void(std::shared_ptr<ClientSession>)> cb) {
     dispatcher.onDisconnect = cb;
+}
+
+void Handler::searchUserRequest(std::shared_ptr<ClientSession> client, const nlohmann::json& j) {
+    auto users = userManager.searhUsers(j["username"]);
+
+    std::string response = protocol::searchUserResponse(users);
+    dispatcher.sendTo(client, response);
 }

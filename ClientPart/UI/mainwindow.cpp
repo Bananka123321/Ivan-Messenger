@@ -1,16 +1,47 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <QTimer>
+#include <QScrollBar>
 
 MainWindow::MainWindow(QWidget *parent_, AppState* state_, DialogManager* manager_)
     : QMainWindow(parent_), ui(new Ui::MainWindows), state(state_), manager(manager_) {
     ui->setupUi(this);
 
+    model = new QStringListModel(this);
+
+    completer = new QCompleter(model, this);
+    completer->setCaseSensitivity(Qt::CaseInsensitive);
+    completer->setFilterMode(Qt::MatchContains);
+
+    ui->searchLineEdit->setCompleter(completer);
+
+    QTimer* searchTimer = new QTimer(this);
+    searchTimer->setSingleShot(true);
+
+    connect(ui->searchLineEdit, &QLineEdit::textChanged, this, [this, searchTimer](const QString& text) {
+        if (text.isEmpty()) return;
+
+        searchTimer->start(300);
+    });
+
+    connect(searchTimer, &QTimer::timeout, this, [this]() {
+        emit searchUser(ui->searchLineEdit->text().toStdString());
+    });
+
     connect(ui->sendButton, &QPushButton::clicked, this, [this]() {
         QString text = ui->inputField->text();
         if (text.isEmpty() || selectedUserId == -1) return;
 
+        int myId = state->getCurrentUserId();
+        Message localMsg{myId, selectedUserId, text.QString::toStdString()};
+
         emit sendMessageRequest(selectedUserId, text.toStdString());
+
         ui->inputField->clear();
+        // ui->chatView->append("[YOU] " + text);
+        // ui->chatView->verticalScrollBar()->setValue(ui->chatView->verticalScrollBar()->maximum());
+
+        manager->addMessage(localMsg);
     });
 
     connect(ui->userWidget, &QListWidget::itemClicked, this, [this](QListWidgetItem* item) {
@@ -38,6 +69,31 @@ MainWindow::MainWindow(QWidget *parent_, AppState* state_, DialogManager* manage
     connect(manager, &DialogManager::dialogUpdated, this, [this](int peerId) {
         if(peerId != selectedUserId) return;
         refreshCurrentChat();
+    });
+
+    connect(manager, &DialogManager::findUsers, this, [this](const std::vector<protocol::User>& users){
+        QStringList list;
+        searchMap.clear();
+
+        for (const auto& u : users) {
+            QString name = QString::fromStdString(u.username);
+            list << name;
+            searchMap[u.username] = u.user_id;
+        }
+
+        model->setStringList(list);
+
+        completer->complete();
+    });
+
+    connect(completer, QOverload<const QString&>::of(&QCompleter::activated), this, [this](const QString& text){
+        std::string username = text.toStdString();
+
+        if(searchMap.find(username) == searchMap.end()) return;
+
+        int id = searchMap[username];
+
+        openDialog(id);
     });
 }
 
@@ -67,7 +123,10 @@ void MainWindow::refreshCurrentChat() {
 
     std::string name = state->getUsername(selectedUserId);
 
-    const auto& messages = manager->getDialog(selectedUserId)->messages;
+    const Dialog* dialog = manager->getDialog(selectedUserId);
+    if(!dialog) return;
+
+    const auto& messages = dialog->messages;
     for (const auto& msg : messages) {
         if(msg.senderId == selectedUserId)
             ui->chatView->append(QString::fromStdString("[" + name + "] " + msg.text));
@@ -87,7 +146,7 @@ void MainWindow::updateSingleDialog(int peerId) {
             QString name = QString::fromStdString(state->getUsername(peerId));
             QString last = QString::fromStdString(dialog->lastMessage);
 
-            item->setText(name + " | " + last);
+            item->setText(name + "] " + last);
 
             QListWidgetItem* taken = ui->userWidget->takeItem(i);
             ui->userWidget->insertItem(0, taken);
@@ -96,7 +155,35 @@ void MainWindow::updateSingleDialog(int peerId) {
         }
     }
 
-    QListWidgetItem* item = new QListWidgetItem(QString::fromStdString(state->getUsername(peerId) + "]\t" + manager->getDialog(peerId)->lastMessage));
+    const Dialog* dialog = manager->getDialog(peerId);
+    if(!dialog) return;
+
+    QListWidgetItem* item = new QListWidgetItem(QString::fromStdString(state->getUsername(peerId) + "]\t" + dialog->lastMessage));
     item->setData(Qt::UserRole, peerId);
     ui->userWidget->insertItem(0, item);
+}
+
+void MainWindow::openDialog(int id) {
+    selectedUserId = id;
+    ui->user->setText(QString::fromStdString(state->getUsername(selectedUserId)));
+
+    renderMessages(selectedUserId);
+}
+
+void MainWindow::renderMessages(int userId) {
+    ui->chatView->clear();
+
+    const Dialog* dialog = manager->getDialog(userId);
+    if (!dialog) {
+        ui->chatView->setPlainText("go chatting with - " + QString::fromStdString(state->getUsername(userId)));
+        ui->inputField->setFocus();
+        return;
+    }
+
+    for (const auto& msg : dialog->messages) {
+        if (msg.senderId == userId)
+            ui->chatView->append(QString::fromStdString("[" + state->getUsername(userId) + "] " + msg.text));
+        else
+            ui->chatView->append(QString::fromStdString("[YOU] " + msg.text));
+    }
 }

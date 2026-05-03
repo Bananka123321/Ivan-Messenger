@@ -24,3 +24,8 @@ void MessageRouter::sendMessage(const int& from, const int& to, const std::strin
 void MessageRouter::sendPacket(const std::string& msg) {
     PacketIO::sendPacket(clientSocket, msg);
 }
+
+void MessageRouter::searchUser(const std::string& text) {
+    std::string request = protocol::searchUserRequest(text);
+    sendPacket(request);
+}

@@ -2,6 +2,9 @@
 
 #include <QMainWindow>
 #include <unordered_map>
+#include <QListWidget>
+#include <QCompleter>
+#include <QStringListModel>
 
 #include "Handler.h"
 #include "AppState.h"
@@ -25,9 +28,13 @@ public:
 
 signals:
     void sendMessageRequest(const int& to, const std::string& text);
+    void searchUser(const std::string& text);
 
 private:
     Ui::MainWindows *ui;
+
+    QCompleter* completer;
+    QStringListModel* model;
 
     AppState* state;
     DialogManager* manager;
@@ -38,4 +45,9 @@ private:
     void refreshCurrentChat();
 
     void updateSingleDialog(int peerId);
+
+    void openDialog(int id);
+    void renderMessages(int userId);
+
+    std::unordered_map<std::string, int> searchMap;
 };
