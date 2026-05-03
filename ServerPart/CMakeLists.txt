@@ -9,6 +9,7 @@ set(SERVER_SOURCES
     src/Handler.cpp
     src/SessionManager.cpp
     src/MessageDispatcher.cpp
+    src/Config.cpp
     ../common/PacketIO.cpp
 )
 

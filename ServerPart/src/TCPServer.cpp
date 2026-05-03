@@ -51,7 +51,7 @@ bool TCPServer::setupSocket() {
 
 void TCPServer::run() {
     sockaddr_in clientAddr{};
-    int addrLen = sizeof(clientAddr);
+    socklen_t addrLen = sizeof(clientAddr); 
     while (true) {
         int clientSocket = accept(serverSocket, (sockaddr*)&clientAddr, (socklen_t*)&addrLen);
         if (clientSocket == -1) continue;
