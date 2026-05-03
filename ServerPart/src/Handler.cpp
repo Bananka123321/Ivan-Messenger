@@ -1,6 +1,6 @@
 #include "../include/Handler.h"
 
-Handler::Handler(SessionManager& sm) : sessionManager(sm), dispatcher(sessionManager), userManager("dbname=chat_app user=ivan password=12345 host=localhost") {
+Handler::Handler(SessionManager& sm) : sessionManager(sm), dispatcher(sessionManager), userManager(Config::getDB().getConnectionStr()) {
     handlers["loginRequest"] = [this](std::shared_ptr<ClientSession> client, const nlohmann::json& j) {
         loginRequest(client, j);
     };
@@ -89,7 +89,7 @@ void Handler::setDisconnectHandler(std::function<void(std::shared_ptr<ClientSess
 }
 
 void Handler::searchUserRequest(std::shared_ptr<ClientSession> client, const nlohmann::json& j) {
-    auto users = userManager.searhUsers(j["username"]);
+    auto users = userManager.searchUsers(j["username"]);
 
     std::string response = protocol::searchUserResponse(users);
     dispatcher.sendTo(client, response);

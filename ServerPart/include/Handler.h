@@ -4,6 +4,7 @@
 #include "UserManager.h"
 #include "SessionManager.h"
 #include "MessageDispatcher.h"
+#include "Config.h"
 
 class Handler {
 public:

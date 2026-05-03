@@ -52,7 +52,7 @@ std::string UserManager::hashPassword(const std::string& password) {
     return ss.str();
 }
 
-std::vector<protocol::User> UserManager::searhUsers(const std::string& query) {
+std::vector<protocol::User> UserManager::searchUsers(const std::string& query) {
     std::vector<protocol::User> result;
 
     try {
@@ -67,6 +67,6 @@ std::vector<protocol::User> UserManager::searhUsers(const std::string& query) {
 
     } catch(const std::exception& e) {
         std::cerr << e.what() << '\n';
-        // return {-1, e.what()};
+        return {};
     }
 }

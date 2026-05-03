@@ -19,7 +19,7 @@ public:
     AuthResult registerUser(const std::string& username, const std::string& password);
     AuthResult loginUser(const std::string& username, const std::string& password);
     bool bUsernameAvailable(const std::string& username);
-    std::vector<protocol::User> searhUsers(const std::string& query);
+    std::vector<protocol::User> searchUsers(const std::string& query);
 
 private:
 
