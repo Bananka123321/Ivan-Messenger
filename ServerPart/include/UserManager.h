@@ -1,10 +1,12 @@
 #pragma once
 #include <pqxx/pqxx>
-#include <openssl/sha.h>
 #include <string>
 #include <sstream>
 #include <iomanip>
 #include <iostream>
+#include <argon2.h>
+#include <random>
+
 #include "protocol.h"
 
 class UserManager {
@@ -22,7 +24,6 @@ public:
     std::vector<protocol::User> searchUsers(const std::string& query);
 
 private:
-
     std::string hashPassword(const std::string& password);
     pqxx::connection conn;
 };
