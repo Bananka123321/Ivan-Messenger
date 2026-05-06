@@ -27,29 +27,45 @@ UserManager::AuthResult UserManager::registerUser(const std::string& username, c
 }
 
 UserManager::AuthResult UserManager::loginUser(const std::string& username, const std::string& password) {
-    std::string hashed = hashPassword(password);
     try {
         pqxx::work txn(conn);
         pqxx::result r = txn.exec("SELECT id, password_hash FROM users WHERE username = " + txn.quote(username));
         if (r.empty()) return {false, -1, "User not found"};
         
         std::string dbHash = r[0]["password_hash"].c_str();
-        if (dbHash != hashed) return {false, -1, "Invalid password"};
-        return {true, r[0]["id"].as<int>(), ""};
+        
+        if (argon2id_verify(dbHash.c_str(), password.c_str(), password.size()) == ARGON2_OK)
+            return {true, r[0]["id"].as<int>(), ""};
+        return {false, -1, "Invalid password"};
 
     } catch(const std::exception &e) {
-        std::cerr << e.what() << std::endl;
+        std::cerr << e.what() << '\n';
         return {false, -1, e.what()};
     }
 }
 
 std::string UserManager::hashPassword(const std::string& password) {
-    unsigned char hash[SHA256_DIGEST_LENGTH];
-    SHA256((unsigned char*)password.c_str(), password.size(), hash);
-    std::stringstream ss;
-    for (size_t i = 0; i < SHA256_DIGEST_LENGTH; i++)
-        ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
-    return ss.str();
+    char salt[16];
+
+    std::random_device rd;
+    for (size_t i = 0; i < sizeof(salt); i++)
+        salt[i] = static_cast<unsigned char>(rd());
+
+    char hash[128] = {0};
+    try {
+        int result = argon2id_hash_encoded(3, 65536, 4, password.c_str(), password.size(), salt, sizeof(salt), 32, hash, sizeof(hash));
+
+        if (result != ARGON2_OK) {
+            std::cerr << "Argon2 hashing failed: " << argon2_error_message(result) << '\n';
+            return "";
+        }
+
+        return hash;
+
+    } catch(const std::exception& e) {
+        std::cerr << e.what() << '\n';
+        return "";
+    }
 }
 
 std::vector<protocol::User> UserManager::searchUsers(const std::string& query) {
