@@ -14,6 +14,7 @@ set(SERVER_SOURCES
 )
 
 find_library(ARGON2_LIB argon2 REQUIRED)
+find_package(OpenSSL REQUIRED)
 
 add_executable(Server ${SERVER_SOURCES})
 
@@ -25,4 +26,5 @@ target_include_directories(Server PRIVATE
 target_link_libraries(Server PRIVATE
     pqxx pq crypto
     argon2
+    OpenSSL::SSL
 )

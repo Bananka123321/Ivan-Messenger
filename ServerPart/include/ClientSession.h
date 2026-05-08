@@ -1,12 +1,14 @@
 #pragma once
 
 #include <string>
+#include <openssl/ssl.h>
 
 #include "../../common/PacketIO.h"
 
 class ClientSession {
 public:
-    ClientSession(int sock);
+    ClientSession(int sock, SSL* ssl_);
+    ~ClientSession();
 
     const int getSocket() const;
     const std::string& getUsername() const;
@@ -20,4 +22,5 @@ private:
     int socket;
     int user_id;
     std::string username;
+    SSL* ssl;
 };

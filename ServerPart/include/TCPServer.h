@@ -2,10 +2,14 @@
 
 #include <thread>
 #include <unistd.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 
 #include "../../common/protocol.h"
 #include "Handler.h"
 #include "SessionManager.h"
+
+static SSL_CTX* g_ssl_ctx = nullptr;
 
 class TCPServer {
 public:
