@@ -15,12 +15,16 @@ typedef SOCKET Socket;
 #include <string>
 #include <cstring>
 #include <functional>
-#include "MessageRouter.h"
 #include <iostream>
 #include <thread>
+#include <openssl/err.h>
+#include <openssl/ssl.h>
 
-class TCPClient
-{
+#include "MessageRouter.h"
+
+static SSL_CTX* g_ssl_ctx = nullptr;
+
+class TCPClient {
 public:
     TCPClient(int port_, MessageRouter* msgRouter_);
     ~TCPClient();
@@ -37,4 +41,6 @@ private:
 
     bool setupSocket();
     void run();
+
+    SSL* ssl;
 };

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <openssl/ssl.h>
+
 #include "protocol.h"
 #include "PacketIO.h"
 
@@ -13,9 +15,9 @@ public:
     void sendMessage(const int& from, const int& to, const std::string& text);
     void searchUser(const std::string& text);
 
-    void setSocket(int socket);
+    void setSSL(SSL* ssl_);
 
 private:
-    int clientSocket;
+    SSL* ssl;
     void sendPacket(const std::string& msg);
 };

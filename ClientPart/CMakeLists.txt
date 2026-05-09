@@ -44,6 +44,8 @@ set(CLIENT_HEADERS
     ../common/Dialog.h
 )
 
+find_package(OpenSSL REQUIRED)
+
 qt_add_executable(Client
     ${CLIENT_SOURCES}
     ${CLIENT_HEADERS}
@@ -61,6 +63,7 @@ target_include_directories(Client PRIVATE
 
 target_link_libraries(Client PRIVATE
     Qt6::Widgets
+    OpenSSL::SSL
 )
 
 if (WIN32)

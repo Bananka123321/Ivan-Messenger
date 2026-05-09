@@ -1,6 +1,14 @@
 #include "../include/ClientSession.h"
 
-ClientSession::ClientSession(int sock) : socket(sock) {}
+ClientSession::ClientSession(int sock, SSL* ssl_) : socket(sock), ssl(ssl_) {}
+
+ClientSession::~ClientSession() {
+    if (ssl) {
+        SSL_shutdown(ssl);
+        SSL_free(ssl);
+        ssl = nullptr;
+    }
+}
 
 const int ClientSession::getSocket() const {
     return socket;
@@ -15,11 +23,11 @@ const int& ClientSession::getUserId() const {
 }
 
 bool ClientSession::send(const std::string& message) {
-    return PacketIO::sendPacket(socket, message);
+    return PacketIO::sendPacket(ssl, message);
 }   
 
 bool ClientSession::receive(std::string& message) {
-    return PacketIO::recvPacket(socket, message);
+    return PacketIO::recvPacket(ssl, message);
 }
 
 void ClientSession::setUser(const int& new_id, const std::string& new_username) {

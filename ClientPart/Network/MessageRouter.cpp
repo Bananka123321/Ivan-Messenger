@@ -2,8 +2,8 @@
 
 MessageRouter::MessageRouter() {}
 \
-void MessageRouter::setSocket(int socket) {
-    clientSocket = socket;
+void MessageRouter::setSSL(SSL* ssl_) {
+    ssl = ssl_;
 }
 
 void MessageRouter::loginRequest(const std::string& login, const std::string& password) {
@@ -22,7 +22,7 @@ void MessageRouter::sendMessage(const int& from, const int& to, const std::strin
 }
 
 void MessageRouter::sendPacket(const std::string& msg) {
-    PacketIO::sendPacket(clientSocket, msg);
+    PacketIO::sendPacket(ssl, msg);
 }
 
 void MessageRouter::searchUser(const std::string& text) {

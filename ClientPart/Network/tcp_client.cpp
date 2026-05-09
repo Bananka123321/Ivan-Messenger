@@ -1,8 +1,25 @@
 #include "tcp_client.h"
 
-TCPClient::TCPClient(int port_, MessageRouter* msgRouter_) : port(port_), clientSocket(-1), router(msgRouter_) {}
+TCPClient::TCPClient(int port_, MessageRouter* msgRouter_) : port(port_), clientSocket(-1), router(msgRouter_) {
+    SSL_load_error_strings();
+    OpenSSL_add_ssl_algorithms();
+
+    g_ssl_ctx = SSL_CTX_new(TLS_client_method());
+    if(!g_ssl_ctx) {
+        std::cerr << "Failed to create SSL context\n";
+        return;
+    }
+
+    SSL_CTX_set_verify(g_ssl_ctx, SSL_VERIFY_NONE, nullptr);
+}
 
 TCPClient::~TCPClient() {
+    if(ssl) {
+        SSL_shutdown(ssl);
+        SSL_free(ssl);
+        ssl = nullptr;
+    }
+
     if (clientSocket != -1) {
 #ifdef _WIN32
         closesocket(clientSocket);
@@ -47,6 +64,15 @@ bool TCPClient::setupSocket() {
         return false;
     }
 
+    ssl = SSL_new(g_ssl_ctx);
+    SSL_set_fd(ssl, clientSocket);
+
+    if(SSL_connect(ssl) <= 0) {
+        std::cerr << "TLS connect failed\n";
+        ERR_print_errors_fp(stderr);
+        return false;
+    }
+
     handoverSocket();
 
     std::cout << "You successfully connected to!!\n";
@@ -56,11 +82,11 @@ bool TCPClient::setupSocket() {
 void TCPClient::run() {
     std::thread([this]() {
         std::string msg;
-        while (PacketIO::recvPacket(clientSocket, msg) && onMessage)
+        while (PacketIO::recvPacket(ssl, msg) && onMessage)
             onMessage(msg);
     }).detach();
 }
 
 void TCPClient::handoverSocket() {
-    router->setSocket(clientSocket);
+    router->setSSL(ssl);
 }
