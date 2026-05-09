@@ -19,7 +19,7 @@ LoginWindow::LoginWindow(QWidget *parent_, MessageRouter* router_)
         login = ui->loginRegField->text().toStdString();
         std::string password = ui->passwordRegField->text().toStdString();
 
-        if (login.empty() || password.empty()) return;
+        if (login.empty() || password.empty() || password.length() < 6) return;
         if (password != ui->passwordRepeateField->text().toStdString()) return;
 
         emit registerRequest(login, password);

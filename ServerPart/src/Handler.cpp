@@ -63,6 +63,7 @@ void Handler::registerRequest(std::shared_ptr<ClientSession> client, const nlohm
 
 void Handler::authSuccess(std::shared_ptr<ClientSession> client, const int& id, const std::string& username) {
     client->setUser(id, username);
+    client->setIsAuthentificated(true);
     sessionManager.add(client);
 
     auto allClients = sessionManager.getAll();
@@ -78,6 +79,8 @@ void Handler::authSuccess(std::shared_ptr<ClientSession> client, const int& id, 
 }
 
 void Handler::privateMessage(std::shared_ptr<ClientSession> client, const nlohmann::json& j) {
+    if (!client->getIsAuthentificated()) return;
+    
     auto receiver = sessionManager.getByUserId(j["to"]);
     if (!receiver) return;
 
