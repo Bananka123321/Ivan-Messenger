@@ -1,6 +1,6 @@
 #include "../include/ClientSession.h"
 
-ClientSession::ClientSession(int sock, SSL* ssl_) : socket(sock), ssl(ssl_) {}
+ClientSession::ClientSession(int sock, SSL* ssl_) : socket(sock), ssl(ssl_), isAuthentificated(false) {}
 
 ClientSession::~ClientSession() {
     if (ssl) {
@@ -33,4 +33,12 @@ bool ClientSession::receive(std::string& message) {
 void ClientSession::setUser(const int& new_id, const std::string& new_username) {
     username = new_username;
     user_id = new_id;
+}
+
+bool ClientSession::getIsAuthentificated() const {
+    return isAuthentificated;
+}
+
+void ClientSession::setIsAuthentificated(bool value) {
+    isAuthentificated = value;
 }

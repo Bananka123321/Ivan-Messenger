@@ -1,7 +1,11 @@
 #pragma once
 
 #include <QDialog>
+#include <optional>
+#include <QLineEdit>
+
 #include "MessageRouter.h"
+#include "Validator.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -31,5 +35,11 @@ private:
 
     MessageRouter* router;
 
-    std::string login;
+    void tryLogin();
+    void tryRegister();
+    void showError(const QString& msg);
+
+    void validateLoginForm();
+    void validateRegisterForm();
+    void updateFieldStyle(QLineEdit* field, bool isValid, bool isEmpty);
 };

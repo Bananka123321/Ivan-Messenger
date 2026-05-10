@@ -23,6 +23,7 @@ set(CLIENT_SOURCES
     UI/uicontroller.cpp
 
     ../common/PacketIO.cpp
+    ../common/Validator.cpp
 )
 
 set(CLIENT_HEADERS
@@ -42,6 +43,8 @@ set(CLIENT_HEADERS
     ../common/PacketIO.h
     ../common/Message.h
     ../common/Dialog.h
+    ../common/protocol.h
+    ../common/Validator.h
 )
 
 find_package(OpenSSL REQUIRED)

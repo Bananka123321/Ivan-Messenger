@@ -5,6 +5,7 @@
 #include "SessionManager.h"
 #include "MessageDispatcher.h"
 #include "Config.h"
+#include "Validator.h"
 
 class Handler {
 public:

@@ -98,6 +98,9 @@
            </item>
            <item>
             <widget class="QLineEdit" name="loginRegField">
+             <property name="maxLength">
+              <number>15</number>
+             </property>
              <property name="alignment">
               <set>Qt::AlignCenter</set>
              </property>
@@ -125,6 +128,9 @@
            </item>
            <item>
             <widget class="QLineEdit" name="passwordRegField">
+             <property name="maxLength">
+              <number>32</number>
+             </property>
              <property name="frame">
               <bool>true</bool>
              </property>
@@ -161,6 +167,9 @@
            </item>
            <item>
             <widget class="QLineEdit" name="passwordRepeateField">
+             <property name="maxLength">
+              <number>32</number>
+             </property>
              <property name="echoMode">
               <enum>QLineEdit::Password</enum>
              </property>
@@ -284,6 +293,9 @@
            <property name="inputMethodHints">
             <set>Qt::ImhHiddenText</set>
            </property>
+           <property name="maxLength">
+            <number>15</number>
+           </property>
            <property name="alignment">
             <set>Qt::AlignCenter</set>
            </property>
@@ -294,6 +306,9 @@
          </item>
          <item>
           <widget class="QLineEdit" name="passwordField">
+           <property name="maxLength">
+            <number>32</number>
+           </property>
            <property name="echoMode">
             <enum>QLineEdit::Password</enum>
            </property>
@@ -312,6 +327,9 @@
            </property>
            <item>
             <widget class="QCheckBox" name="rememberBox">
+             <property name="cursor">
+              <cursorShape>PointingHandCursor</cursorShape>
+             </property>
              <property name="text">
               <string>Remember me</string>
              </property>

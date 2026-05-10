@@ -12,8 +12,12 @@ public:
 
     const int getSocket() const;
     const std::string& getUsername() const;
+
     const int& getUserId() const;
     void setUser(const int& new_id, const std::string& new_username);
+
+    bool getIsAuthentificated() const;
+    void setIsAuthentificated(bool value);
 
     bool send(const std::string& message);
     bool receive(std::string& message);
@@ -23,4 +27,5 @@ private:
     int user_id;
     std::string username;
     SSL* ssl;
+    bool isAuthentificated;
 };
