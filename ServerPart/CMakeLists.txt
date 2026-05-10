@@ -10,6 +10,8 @@ set(SERVER_SOURCES
     src/SessionManager.cpp
     src/MessageDispatcher.cpp
     src/Config.cpp
+    
+    ../common/Validator.cpp
     ../common/PacketIO.cpp
 )
 

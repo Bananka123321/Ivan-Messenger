@@ -114,4 +114,11 @@ inline std::string searchUserResponse(const std::vector<User>& result) {
     return j.dump();
 }
 
+inline std::string errorMessage(const std::string& reason) {
+    nlohmann::json j;
+    j["type"] = "error";
+    j["message"] = reason;
+    return j.dump();
+}
+
 }

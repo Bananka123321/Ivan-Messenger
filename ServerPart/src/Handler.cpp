@@ -42,6 +42,12 @@ void Handler::handleMessage(std::shared_ptr<ClientSession> client, std::string& 
 
 
 void Handler::loginRequest(std::shared_ptr<ClientSession> client, const nlohmann::json& j) {
+    std::string error;
+    if(!Validator::valid_string_field(j, "username", Validator::username, error) || !Validator::valid_string_field(j, "password", Validator::password, error)) {
+        dispatcher.sendTo(client, protocol::loginResponse(false, -1, "", error));
+        return;
+    }
+
     auto res = userManager.loginUser(j["username"], j["password"]);
     std::string response = protocol::loginResponse(res.success, res.user_id, j["username"], res.error);
     dispatcher.sendTo(client, response);
@@ -52,6 +58,12 @@ void Handler::loginRequest(std::shared_ptr<ClientSession> client, const nlohmann
 }
 
 void Handler::registerRequest(std::shared_ptr<ClientSession> client, const nlohmann::json& j) {
+    std::string error;
+    if(!Validator::valid_string_field(j, "username", Validator::username, error) || !Validator::valid_string_field(j, "password", Validator::password, error)) {
+        dispatcher.sendTo(client, protocol::registerResponse(false, -1, "", error));
+        return;
+    }
+    
     auto res = userManager.registerUser(j["username"],j["password"]);
     std::string response = protocol::registerResponse(res.success, res.user_id, j["username"], res.error);
     dispatcher.sendTo(client, response);
@@ -81,6 +93,17 @@ void Handler::authSuccess(std::shared_ptr<ClientSession> client, const int& id, 
 void Handler::privateMessage(std::shared_ptr<ClientSession> client, const nlohmann::json& j) {
     if (!client->getIsAuthentificated()) return;
     
+    std::string error;
+    if(!Validator::valid_string_field(j, "text", Validator::message, error)) {
+        dispatcher.sendTo(client, protocol::errorMessage(error));
+        return;
+    }
+
+    if(!Validator::valid_int_field(j, "to", 1, std::numeric_limits<long int>::max(), error)) {
+        dispatcher.sendTo(client, protocol::errorMessage(error));
+        return;
+    }
+    
     auto receiver = sessionManager.getByUserId(j["to"]);
     if (!receiver) return;
 
@@ -92,6 +115,12 @@ void Handler::setDisconnectHandler(std::function<void(std::shared_ptr<ClientSess
 }
 
 void Handler::searchUserRequest(std::shared_ptr<ClientSession> client, const nlohmann::json& j) {
+    std::string error;
+    if(!Validator::valid_string_field(j, "username", Validator::username, error)) {
+        dispatcher.sendTo(client, protocol::errorMessage(error));
+        return;
+    }
+
     auto users = userManager.searchUsers(j["username"]);
 
     std::string response = protocol::searchUserResponse(users);
