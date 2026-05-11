@@ -18,19 +18,17 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            qt_version: '6.4.2'
+            qt_version: '6.5.3'
             qt_arch: 'win64_msvc2019_64'
             artifact_name: ChatClient_Windows
-            binary_name: Server.exe
-            out_name: Client.exe
+            binary_name: Client.exe
             suffix: .zip
 
           - os: ubuntu-22.04
-            qt_version: '6.4.2'
-            qt_arch: 'linux_gcc_64'
+            qt_version: '6.5.3'
+            qt_arch: 'gcc_64'
             artifact_name: ChatClient_Linux
-            binary_name: Server
-            out_name: Client
+            binary_name: Client
             suffix: .tar.gz
 
     steps:
@@ -50,45 +48,59 @@ jobs:
           sudo apt update
           sudo apt install -y build-essential libgl1-mesa-dev libxkbcommon-x11-0 \
             libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
-            libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-xinerama0
+            libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-xinerama0 \
+            libssl-dev
+          
+          # Установка linuxdeployqt
           wget -c -nv "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
           chmod a+x linuxdeployqt-continuous-x86_64.AppImage
           sudo mv linuxdeployqt-continuous-x86_64.AppImage /usr/local/bin/linuxdeployqt
 
       - name: Configure CMake
-        run: cmake -S ClientPart -B ClientPart/build -DCMAKE_BUILD_TYPE=Release
+        run: |
+          cmake -S ClientPart -B ClientPart/build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DOPENSSL_ROOT_DIR=${{ runner.os == 'Windows' && '$env:OPENSSL_ROOT_DIR' || '/usr/include/openssl' }}
 
       - name: Build
         run: cmake --build ClientPart/build --config Release --parallel
 
-      # Упаковка Windows
+      # --- WINDOWS ---
       - name: Package Windows
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           $dist = "release_pkg"
           New-Item -ItemType Directory -Force -Path $dist
-          Copy-Item "ClientPart/build/release/${{ matrix.binary_name }}" "$dist/${{ matrix.out_name }}" -Force
+          
+          # Копируем бинарник (путь release/Client.exe создается MSVC)
+          Copy-Item "ClientPart/build/release/${{ matrix.binary_name }}" "$dist/" -Force
           if (Test-Path "config.json") { Copy-Item "config.json" "$dist/" }
-          windeployqt --release --no-translations --no-system-d3d-compiler "$dist/${{ matrix.out_name }}"
+
+          windeployqt --release --no-translations --no-system-d3d-compiler "$dist/${{ matrix.binary_name }}"
+          
+          # Подкладываем OpenSSL DLL (важно для работы сети)
+          Copy-Item "$env:OPENSSL_ROOT_DIR\bin\*.dll" "$dist/" -ErrorAction SilentlyContinue
+
           Compress-Archive -Path "$dist/*" -DestinationPath "${{ matrix.artifact_name }}${{ matrix.suffix }}"
 
-      # Упаковка Linux
+      # --- LINUX ---
       - name: Package Linux
         if: runner.os == 'Linux'
         shell: bash
         run: |
           dist="release_pkg"
           mkdir -p "$dist"
-          cp "ClientPart/build/release/${{ matrix.binary_name }}" "$dist/${{ matrix.out_name }}"
+          
+          cp "ClientPart/build/release/${{ matrix.binary_name }}" "$dist/"
           [ -f config.json ] && cp config.json "$dist/"
-          chmod +x "$dist/${{ matrix.out_name }}"
-          
-          # Создаем мелкий скрипт запуска для удобства
-          echo -e '#!/bin/bash\nDIR=$(cd "$(dirname "$0")" && pwd)\nexport LD_LIBRARY_PATH="$DIR/lib:$LD_LIBRARY_PATH"\nexec "$DIR/${{ matrix.out_name }}"' > "$dist/run.sh"
+          chmod +x "$dist/${{ matrix.binary_name }}"
+
+          # Скрипт запуска
+          echo -e "#!/bin/bash\nDIR=\$(cd \"\$(dirname \"\$0\")\" && pwd)\nexport LD_LIBRARY_PATH=\"\$DIR/lib:\$LD_LIBRARY_PATH\"\nexec \"\$DIR/${{ matrix.binary_name }}\"" > "$dist/run.sh"
           chmod +x "$dist/run.sh"
-          
-          linuxdeployqt "$dist/${{ matrix.out_name }}" -appimage -unsupported-allow-new-glibc || true
+
+          linuxdeployqt "$dist/${{ matrix.binary_name }}" -appimage -unsupported-allow-new-glibc || true
           tar -czf "${{ matrix.artifact_name }}${{ matrix.suffix }}" -C "$dist" .
 
       - name: Upload artifacts

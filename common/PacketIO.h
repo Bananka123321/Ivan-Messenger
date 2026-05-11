@@ -2,9 +2,17 @@
 
 #include <string>
 #include <iostream>
-#include <netinet/in.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
+
+#ifdef _WIN32
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
+#else
+    #include <netinet/in.h>
+    #include <arpa/inet.h>
+    #include <sys/socket.h>
+#endif
 
 const uint32_t MAX_PACKET_SIZE = 1024*1024;
 
