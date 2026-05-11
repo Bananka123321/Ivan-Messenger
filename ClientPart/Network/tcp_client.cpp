@@ -1,4 +1,8 @@
 #include "tcp_client.h"
+#include <QString>
+
+QString IPADRESS_dev = "127.0.0.1";
+QString IPADRESS_dep = "31.192.108.37";
 
 TCPClient::TCPClient(int port_, MessageRouter* msgRouter_) : port(port_), clientSocket(-1), router(msgRouter_) {
     SSL_load_error_strings();
@@ -54,7 +58,7 @@ bool TCPClient::setupSocket() {
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(port);
 
-    if (inet_pton(AF_INET, "127.0.0.1", &serverAddr.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, IPADRESS_dep.toUtf8().constData(), &serverAddr.sin_addr) <= 0) {
         std::cerr << "Incorrect IP ADRESS\n";
         return false;
     }
