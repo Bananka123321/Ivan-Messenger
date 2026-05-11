@@ -13,21 +13,28 @@ jobs:
         include:
           - os: windows-latest
             qt_version: '6.4.2'
-            qt_modules: 'qtbase qttools qtnetwork'
+            qt_arch: 'win64_msvc2019_64'
           - os: ubuntu-22.04
             qt_version: '6.4.2'
-            qt_modules: 'qtbase qttools qtnetwork'
+            qt_arch: 'linux_gcc_64'
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Qt
+      - name: Setup Qt (Qt6: базовые модули в qtbase)
         uses: jurplel/install-qt-action@v3
         with:
           version: ${{ matrix.qt_version }}
-          modules: ${{ matrix.qt_modules }}
+          arch: ${{ matrix.qt_arch }}
+          modules: ''
           cache: true
+
+      - name: Install Linux deps (только для Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt update
+          sudo apt install -y libgl1-mesa-dev libxcb-xinerama0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0
 
       - name: Build Client
         run: |
@@ -43,9 +50,10 @@ jobs:
           Copy-Item "build/ClientPart/Client.exe" "$dir/"
           Copy-Item "config.json" "$dir/"
           
-          & windeployqt --release --no-translations --no-system-d3d-compiler "$dir/Client.exe"
+          # windeployqt автоматически подтянет все нужные .dll
+          & "$env:QT_ROOT_DIR/bin/windeployqt" --release --no-translations --no-system-d3d-compiler "$dir/Client.exe"
           
-          New-Item "$dir/README.md" -Value "Windows: запустите Client.exe"
+          New-Item "$dir/README.md" -Value "💻 Windows: запустите Client.exe"
           Compress-Archive -Path "$dir/*" -DestinationPath "ChatClient_Windows.zip"
 
       - name: Package (Linux)
@@ -58,30 +66,33 @@ jobs:
           cp "config.json" "$dir/"
           chmod +x "$dir/Client"
           
-          cp $QT_ROOT_DIR/plugins/platforms/libqxcb.so "$dir/platforms/" 2>/dev/null || true
-          cp $QT_ROOT_DIR/plugins/tls/libqopensslbackend.so "$dir/tls/" 2>/dev/null || true
+          # Qt-плагины
+          cp "$QT_ROOT_DIR/plugins/platforms/libqxcb.so" "$dir/platforms/" 2>/dev/null || true
+          cp "$QT_ROOT_DIR/plugins/tls/libqopensslbackend.so" "$dir/tls/" 2>/dev/null || true
           
+          # Системные либы (Qt, OpenSSL и т.д.)
           ldd "$dir/Client" | grep "=> /" | awk '{print $3}' | xargs -I {} cp {} "$dir/libs/" 2>/dev/null || true
           
+          # Запуск с правильным LD_LIBRARY_PATH
           cat > "$dir/run.sh" << 'EOF'
-          #!/bin/bash
-          DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-          export LD_LIBRARY_PATH="$DIR/libs:$DIR/platforms:$DIR/tls:$LD_LIBRARY_PATH"
-          export QT_PLUGIN_PATH="$DIR"
-          exec "$DIR/Client"
-          EOF
+#!/bin/bash
+DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+export LD_LIBRARY_PATH="$DIR/libs:$DIR/platforms:$DIR/tls:$LD_LIBRARY_PATH"
+export QT_PLUGIN_PATH="$DIR"
+exec "$DIR/Client"
+EOF
           chmod +x "$dir/run.sh"
           echo "Linux: chmod +x run.sh && ./run.sh" > "$dir/README.md"
           
           cd release && tar -czf ChatClient_Linux.tar.gz ChatClient_Linux/
 
-      - name: Upload to GitHub
+      - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           files: release/*.zip,release/*.tar.gz
           tag_name: ${{ github.ref_name }}
           body: |
-            Автоматическая сборка для ${{ runner.os }}
+            Автоматическая сборка клиента для ${{ runner.os }}
             
             ### Как запустить:
             - **Windows**: распакуйте → запустите `Client.exe`
