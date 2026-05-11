@@ -57,10 +57,11 @@ jobs:
           sudo mv linuxdeployqt-continuous-x86_64.AppImage /usr/local/bin/linuxdeployqt
 
       - name: Configure CMake
+        shell: bash
         run: |
           cmake -S ClientPart -B ClientPart/build \
             -DCMAKE_BUILD_TYPE=Release \
-            -DOPENSSL_ROOT_DIR=${{ runner.os == 'Windows' && '$env:OPENSSL_ROOT_DIR' || '/usr/include/openssl' }}
+            -DOPENSSL_ROOT_DIR="${OPENSSL_ROOT_DIR}"
 
       - name: Build
         run: cmake --build ClientPart/build --config Release --parallel
@@ -73,13 +74,14 @@ jobs:
           $dist = "release_pkg"
           New-Item -ItemType Directory -Force -Path $dist
           
-          # Копируем бинарник (путь release/Client.exe создается MSVC)
-          Copy-Item "ClientPart/build/release/${{ matrix.binary_name }}" "$dist/" -Force
+          # Ищем Client.exe рекурсивно в папке build
+          $exePath = Get-ChildItem -Path "ClientPart/build" -Filter "Client.exe" -Recurse | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $exePath) { throw "Client.exe not found in build directory!" }
+          
+          Copy-Item $exePath "$dist/" -Force
           if (Test-Path "config.json") { Copy-Item "config.json" "$dist/" }
 
-          windeployqt --release --no-translations --no-system-d3d-compiler "$dist/${{ matrix.binary_name }}"
-          
-          # Подкладываем OpenSSL DLL (важно для работы сети)
+          windeployqt --release --no-translations --no-system-d3d-compiler "$dist/Client.exe"
           Copy-Item "$env:OPENSSL_ROOT_DIR\bin\*.dll" "$dist/" -ErrorAction SilentlyContinue
 
           Compress-Archive -Path "$dist/*" -DestinationPath "${{ matrix.artifact_name }}${{ matrix.suffix }}"
@@ -92,15 +94,20 @@ jobs:
           dist="release_pkg"
           mkdir -p "$dist"
           
-          cp "ClientPart/build/release/${{ matrix.binary_name }}" "$dist/"
+          # Ищем исполняемый файл Client в папке build
+          # -executable гарантирует, что мы не скопируем какой-нибудь мусор
+          exe_path=$(find ClientPart/build -type f -name "Client" -executable | head -n 1)
+          if [ -z "$exe_path" ]; then echo "Client binary not found!"; exit 1; fi
+          
+          cp "$exe_path" "$dist/"
           [ -f config.json ] && cp config.json "$dist/"
-          chmod +x "$dist/${{ matrix.binary_name }}"
+          chmod +x "$dist/Client"
 
-          # Скрипт запуска
-          echo -e "#!/bin/bash\nDIR=\$(cd \"\$(dirname \"\$0\")\" && pwd)\nexport LD_LIBRARY_PATH=\"\$DIR/lib:\$LD_LIBRARY_PATH\"\nexec \"\$DIR/${{ matrix.binary_name }}\"" > "$dist/run.sh"
+          # Создаем run.sh
+          echo -e "#!/bin/bash\nDIR=\$(cd \"\$(dirname \"\$0\")\" && pwd)\nexport LD_LIBRARY_PATH=\"\$DIR/lib:\$LD_LIBRARY_PATH\"\nexec \"\$DIR/Client\"" > "$dist/run.sh"
           chmod +x "$dist/run.sh"
 
-          linuxdeployqt "$dist/${{ matrix.binary_name }}" -appimage -unsupported-allow-new-glibc || true
+          linuxdeployqt "$dist/Client" -appimage -unsupported-allow-new-glibc || true
           tar -czf "${{ matrix.artifact_name }}${{ matrix.suffix }}" -C "$dist" .
 
       - name: Upload artifacts
