@@ -1,0 +1,92 @@
+name: Release Client
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-22.04]
+        include:
+          - os: windows-latest
+            qt_version: '6.4.2'
+            qt_modules: 'qtbase qttools qtnetwork'
+          - os: ubuntu-22.04
+            qt_version: '6.4.2'
+            qt_modules: 'qtbase qttools qtnetwork'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: ${{ matrix.qt_version }}
+          modules: ${{ matrix.qt_modules }}
+          cache: true
+
+      - name: Build Client
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --target Client --parallel
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $dir = "release/ChatClient_Windows"
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          Copy-Item "build/ClientPart/Client.exe" "$dir/"
+          Copy-Item "config.json" "$dir/"
+          
+          & windeployqt --release --no-translations --no-system-d3d-compiler "$dir/Client.exe"
+          
+          New-Item "$dir/README.md" -Value "Windows: запустите Client.exe"
+          Compress-Archive -Path "$dir/*" -DestinationPath "ChatClient_Windows.zip"
+
+      - name: Package (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          dir="release/ChatClient_Linux"
+          mkdir -p "$dir/platforms" "$dir/tls" "$dir/libs"
+          
+          cp "build/ClientPart/Client" "$dir/"
+          cp "config.json" "$dir/"
+          chmod +x "$dir/Client"
+          
+          cp $QT_ROOT_DIR/plugins/platforms/libqxcb.so "$dir/platforms/" 2>/dev/null || true
+          cp $QT_ROOT_DIR/plugins/tls/libqopensslbackend.so "$dir/tls/" 2>/dev/null || true
+          
+          ldd "$dir/Client" | grep "=> /" | awk '{print $3}' | xargs -I {} cp {} "$dir/libs/" 2>/dev/null || true
+          
+          cat > "$dir/run.sh" << 'EOF'
+          #!/bin/bash
+          DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+          export LD_LIBRARY_PATH="$DIR/libs:$DIR/platforms:$DIR/tls:$LD_LIBRARY_PATH"
+          export QT_PLUGIN_PATH="$DIR"
+          exec "$DIR/Client"
+          EOF
+          chmod +x "$dir/run.sh"
+          echo "Linux: chmod +x run.sh && ./run.sh" > "$dir/README.md"
+          
+          cd release && tar -czf ChatClient_Linux.tar.gz ChatClient_Linux/
+
+      - name: Upload to GitHub
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release/*.zip,release/*.tar.gz
+          tag_name: ${{ github.ref_name }}
+          body: |
+            Автоматическая сборка для ${{ runner.os }}
+            
+            ### Как запустить:
+            - **Windows**: распакуйте → запустите `Client.exe`
+            - **Linux**: распакуйте → `chmod +x run.sh` → `./run.sh`
+            
+            Подключается к серверу: `31.192.108.37:6767`
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
