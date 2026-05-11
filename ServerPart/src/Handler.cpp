@@ -116,7 +116,7 @@ void Handler::setDisconnectHandler(std::function<void(std::shared_ptr<ClientSess
 
 void Handler::searchUserRequest(std::shared_ptr<ClientSession> client, const nlohmann::json& j) {
     std::string error;
-    if(!Validator::valid_string_field(j, "username", Validator::username, error)) {
+    if(!Validator::valid_string_field(j, "username", Validator::search, error)) {
         dispatcher.sendTo(client, protocol::errorMessage(error));
         return;
     }

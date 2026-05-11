@@ -94,11 +94,6 @@ void TCPServer::run() {
 
         std::cout << "CLIENT CONNECTED\n";
         
-        {
-            std::lock_guard<std::mutex> lock(clientsMutex);
-            clients.push_back(client);
-        }
-        
         std::thread(&TCPServer::handleClient, this, client).detach();
     }
 }
@@ -115,11 +110,6 @@ void TCPServer::handleClient(std::shared_ptr<ClientSession> client) {
 }
 
 void TCPServer::clientDisconnect(std::shared_ptr<ClientSession> client) {
-    {
-        std::lock_guard<std::mutex> lock(clientsMutex);
-        clients.erase(std::remove(clients.begin(), clients.end(), client), clients.end());
-    }
-
     sessionManager.remove(client);
 
     close(client->getSocket());

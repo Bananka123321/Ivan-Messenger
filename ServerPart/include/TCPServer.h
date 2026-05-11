@@ -4,9 +4,11 @@
 #include <unistd.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <mutex>
 
 #include "../../common/protocol.h"
 #include "Handler.h"
+#include "ClientSession.h"
 #include "SessionManager.h"
 
 static SSL_CTX* g_ssl_ctx = nullptr;
@@ -21,8 +23,6 @@ public:
 private:
     int port;
     int serverSocket;
-    std::vector<std::shared_ptr<ClientSession>> clients;
-    std::mutex clientsMutex;
 
     SessionManager sessionManager;
     Handler handler;
