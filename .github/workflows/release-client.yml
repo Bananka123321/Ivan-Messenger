@@ -22,7 +22,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Qt (Qt6: базовые модули в qtbase)
+      - name: Setup Qt
         uses: jurplel/install-qt-action@v3
         with:
           version: ${{ matrix.qt_version }}
