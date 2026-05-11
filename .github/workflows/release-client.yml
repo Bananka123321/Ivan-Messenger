@@ -56,7 +56,7 @@ jobs:
           New-Item "$dir/README.md" -Value "💻 Windows: запустите Client.exe"
           Compress-Archive -Path "$dir/*" -DestinationPath "ChatClient_Windows.zip"
 
-      - name: Package (Linux)
+            - name: Package (Linux)
         if: runner.os == 'Linux'
         run: |
           dir="release/ChatClient_Linux"
@@ -75,12 +75,11 @@ jobs:
           
           # Запуск с правильным LD_LIBRARY_PATH
           cat > "$dir/run.sh" << 'EOF'
-#!/bin/bash
-DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-export LD_LIBRARY_PATH="$DIR/libs:$DIR/platforms:$DIR/tls:$LD_LIBRARY_PATH"
-export QT_PLUGIN_PATH="$DIR"
-exec "$DIR/Client"
-EOF
+          DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+          export LD_LIBRARY_PATH="$DIR/libs:$DIR/platforms:$DIR/tls:$LD_LIBRARY_PATH"
+          export QT_PLUGIN_PATH="$DIR"
+          exec "$DIR/Client"
+          EOF
           chmod +x "$dir/run.sh"
           echo "Linux: chmod +x run.sh && ./run.sh" > "$dir/README.md"
           
