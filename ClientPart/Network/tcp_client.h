@@ -19,6 +19,7 @@ typedef SOCKET Socket;
 #include <thread>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
+#include <atomic>
 
 #include "MessageRouter.h"
 
@@ -43,4 +44,6 @@ private:
     void run();
 
     SSL* ssl;
+    std::thread work;
+    std::atomic<bool> running{false};
 };

@@ -38,6 +38,7 @@ void UIController::start() {
 
 void UIController::showMain() {
     loginW->hide();
-
     mainW->show();
+
+    router->getDialogsRequest();
 }

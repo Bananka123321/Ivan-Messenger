@@ -16,19 +16,19 @@ class MainWindows;
 }
 QT_END_NAMESPACE
 
-class MainWindow : public QMainWindow
-{
+class MainWindow : public QMainWindow {
     Q_OBJECT
 
 public:
     MainWindow(QWidget *parent_, AppState* state_, DialogManager* mnager_);
     ~MainWindow();
 
-    void newMessage(int sender, const std::string& text);
+    // void newMessage(int sender, const std::string& text);
 
 signals:
     void sendMessageRequest(const int& to, const std::string& text);
     void searchUser(const std::string& text);
+    void loadHistoryRequest(int peer_id, int last_msg_id);
 
 private:
     Ui::MainWindows *ui;
@@ -43,11 +43,12 @@ private:
 
     void refreshDialogs();
     void refreshCurrentChat();
-
-    void updateSingleDialog(int peerId);
-
     void openDialog(int id);
-    void renderMessages(int userId);
 
     std::unordered_map<std::string, int> searchMap;
+
+
+    void appendMessageToView(const Message& msg);
+    void prependMessagesToView(const std::vector<Message>& messages);
+    // void loadMoreHistory();
 };

@@ -18,6 +18,7 @@ set(CLIENT_SOURCES
     App/StateBinder.cpp
     App/DialogManager.cpp
 
+
     UI/loginwindow.cpp
     UI/mainwindow.cpp
     UI/uicontroller.cpp
@@ -36,13 +37,13 @@ set(CLIENT_HEADERS
     App/StateBinder.h
     App/DialogManager.h
 
+
     UI/loginwindow.h
     UI/mainwindow.h
     UI/uicontroller.h
 
     ../common/PacketIO.h
     ../common/Message.h
-    ../common/Dialog.h
     ../common/protocol.h
     ../common/Validator.h
 )

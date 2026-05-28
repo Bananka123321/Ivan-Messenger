@@ -4,12 +4,14 @@ project(Server)
 set(SERVER_SOURCES
     src/main.cpp
     src/TCPServer.cpp
-    src/UserManager.cpp
+    src/DB_UserManager.cpp
     src/ClientSession.cpp
     src/Handler.cpp
     src/SessionManager.cpp
     src/MessageDispatcher.cpp
     src/Config.cpp
+    src/DB_MessageManager.cpp
+    src/DB_DialogManager.cpp
     
     ../common/Validator.cpp
     ../common/PacketIO.cpp

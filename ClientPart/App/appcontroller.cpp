@@ -18,6 +18,10 @@ void AppController::AttachUI(MainWindow* mainW, LoginWindow* loginW) {
     connect(mainW, &MainWindow::searchUser, this, [this](const std::string& text){
         router->searchUser(text);
     });
+
+    connect(mainW, &MainWindow::loadHistoryRequest, this, [this](int peer_id, int last_msg_id){
+        router->historyRequest(peer_id, last_msg_id);
+    });
 }
 
 

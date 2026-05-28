@@ -1,4 +1,4 @@
-#include "../include/UserManager.h"
+#include "../include/DB_UserManager.h"
 
 bool UserManager::bUsernameAvailable(const std::string& username) {
     try {
@@ -68,8 +68,8 @@ std::string UserManager::hashPassword(const std::string& password) {
     }
 }
 
-std::vector<protocol::User> UserManager::searchUsers(const std::string& query) {
-    std::vector<protocol::User> result;
+std::vector<User> UserManager::searchUsers(const std::string& query) {
+    std::vector<User> result;
 
     try {
         pqxx::work txn(conn);

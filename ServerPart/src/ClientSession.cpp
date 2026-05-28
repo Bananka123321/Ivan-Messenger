@@ -23,6 +23,7 @@ const int& ClientSession::getUserId() const {
 }
 
 bool ClientSession::send(const std::string& message) {
+    
     return PacketIO::sendPacket(ssl, message);
 }   
 

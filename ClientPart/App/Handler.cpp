@@ -20,6 +20,18 @@ Handler::Handler() {
     handlers["searchUserResponse"] = [this] (const nlohmann::json& j) {
         onUserSearch(j["result"]);
     };
+
+    handlers["error"] = [this] (const nlohmann::json& j) {
+        onError(j["message"]);
+    };
+
+    handlers["historyResponse"] = [this] (const nlohmann::json& j) {
+        onHistory(j["success"], j["peer_id"], j["messages"], j["error"]);
+    };
+
+    handlers["getDialogsResponse"] = [this] (const nlohmann::json& j) {
+        onDialogs(j["success"], j["dialogs"], j["error"]);
+    };
 }
 
 void Handler::handleMessage(const std::string& msg) {
@@ -61,6 +73,24 @@ void Handler::onMessage(const int& from, const int& to, const std::string& text)
     emit S_Message(from, to, text);
 }
 
-void Handler::onUserSearch(const std::vector<protocol::User>& users) {
+void Handler::onUserSearch(const std::vector<User>& users) {
     emit S_UserSearch(users);
+}
+
+void Handler::onError(const std::string& text) {
+    std::cerr << text << '\n';
+}
+
+void Handler::onHistory(const bool& success, const int& peer_id, std::vector<Message> history, const std::string& reason) {
+    if(success)
+        emit S_HistoryLoaded(peer_id, history);
+    else
+        onError(reason);
+}
+
+void Handler::onDialogs(const bool& success, const std::vector<MetaDialog>& dialogs, const std::string& reason) {
+    if(success)
+        emit S_DialogsLoaded(dialogs);
+    else
+        onError(reason);
 }

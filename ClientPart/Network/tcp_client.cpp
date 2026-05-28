@@ -39,7 +39,11 @@ bool TCPClient::start() {
     WSAStartup(MAKEWORD(2,2), &wsa);
 #endif
     if (!setupSocket()) return false;
-    run();
+    work = std::thread([this]() {
+        std::string msg;
+        while (PacketIO::recvPacket(ssl, msg) && onMessage)
+            onMessage(msg);
+    });
 
     return true;
 }
@@ -58,7 +62,7 @@ bool TCPClient::setupSocket() {
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(port);
 
-    if (inet_pton(AF_INET, IPADRESS_dep.toUtf8().constData(), &serverAddr.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, IPADRESS_dev.toUtf8().constData(), &serverAddr.sin_addr) <= 0) {
         std::cerr << "Incorrect IP ADRESS\n";
         return false;
     }
@@ -79,16 +83,7 @@ bool TCPClient::setupSocket() {
 
     handoverSocket();
 
-    std::cout << "You successfully connected to!!\n";
     return true;
-}
-
-void TCPClient::run() {
-    std::thread([this]() {
-        std::string msg;
-        while (PacketIO::recvPacket(ssl, msg) && onMessage)
-            onMessage(msg);
-    }).detach();
 }
 
 void TCPClient::handoverSocket() {

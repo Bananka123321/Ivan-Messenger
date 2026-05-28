@@ -8,6 +8,4 @@
 struct Dialog {
     int peerId;
     std::vector<Message> messages;
-    std::string lastMessage;
-    int64_t timestamp;
 };
