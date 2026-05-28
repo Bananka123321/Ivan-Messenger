@@ -62,7 +62,7 @@ bool TCPClient::setupSocket() {
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(port);
 
-    if (inet_pton(AF_INET, IPADRESS_dev.toUtf8().constData(), &serverAddr.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, IPADRESS_dep.toUtf8().constData(), &serverAddr.sin_addr) <= 0) {
         std::cerr << "Incorrect IP ADRESS\n";
         return false;
     }
