@@ -76,7 +76,7 @@ std::vector<User> UserManager::searchUsers(const std::string& query) {
 
         pqxx::result r = txn.exec("SELECT id, username FROM users WHERE username ILIKE " + txn.quote(query + "%") + " LIMIT 20");
 
-        for (auto row : r)
+        for (const auto& row : r)
             result.push_back({row["id"].as<int>(), row["username"].c_str()});
 
         return result;

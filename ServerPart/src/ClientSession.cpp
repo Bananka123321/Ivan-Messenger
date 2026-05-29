@@ -1,6 +1,6 @@
 #include "../include/ClientSession.h"
 
-ClientSession::ClientSession(int sock, SSL* ssl_) : socket(sock), ssl(ssl_), isAuthentificated(false) {}
+ClientSession::ClientSession(int sock, SSL* ssl_) : socket(sock), ssl(ssl_), isAuthentificated(false), last_activity_time(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count()) {}
 
 ClientSession::~ClientSession() {
     if (ssl) {
@@ -23,7 +23,6 @@ const int& ClientSession::getUserId() const {
 }
 
 bool ClientSession::send(const std::string& message) {
-    
     return PacketIO::sendPacket(ssl, message);
 }   
 
@@ -42,4 +41,20 @@ bool ClientSession::getIsAuthentificated() const {
 
 void ClientSession::setIsAuthentificated(bool value) {
     isAuthentificated = value;
+}
+
+int64_t ClientSession::getLastActivity() const {
+    return last_activity_time.load(std::memory_order_relaxed);
+}
+
+void ClientSession::setLastActivity(const int64_t& newTimestamp) {
+    last_activity_time.store(newTimestamp);
+}
+
+bool ClientSession::getConnected() const {
+    return connected.load(std::memory_order_relaxed);
+}
+
+void ClientSession::setConnected(const bool& newState) {
+    connected.store(newState);
 }

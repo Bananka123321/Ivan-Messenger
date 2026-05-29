@@ -31,14 +31,35 @@ TCPServer::TCPServer(int port) : port(port), serverSocket(-1), sessionManager(),
 }
 
 TCPServer::~TCPServer() {
-    if (serverSocket != -1) close(serverSocket);
+    stop();
 }
 
 bool TCPServer::start() {
     if (!setupSocket()) return false;
+
+    startClientMonitoring();
     run();
 
     return true;
+}
+
+void TCPServer::stop() {
+    if(monitorRunning.load()) monitorRunning.store(false);
+    if(serverRunning.load()) serverRunning.store(false);
+    if(monitor_thread.joinable()) monitor_thread.join();
+    
+    if(g_ssl_ctx) {
+        SSL_CTX_free(g_ssl_ctx);
+        g_ssl_ctx = nullptr;
+    }
+
+    EVP_cleanup();
+    CONF_modules_unload(1);
+    
+    if (serverSocket != -1) {
+        shutdown(serverSocket, SHUT_RDWR);
+        close(serverSocket);
+    }
 }
 
 bool TCPServer::setupSocket() {
@@ -73,9 +94,10 @@ bool TCPServer::setupSocket() {
 }
 
 void TCPServer::run() {
+    serverRunning = true;
     sockaddr_in clientAddr{};
     socklen_t addrLen = sizeof(clientAddr); 
-    while (true) {
+    while (serverRunning.load()) {
         int clientSocket = accept(serverSocket, (sockaddr*)&clientAddr, (socklen_t*)&addrLen);
         if (clientSocket == -1) continue;
 
@@ -92,26 +114,56 @@ void TCPServer::run() {
 
         auto client = std::make_shared<ClientSession>(clientSocket, ssl);
 
-        std::cout << "CLIENT CONNECTED\n";
         
         std::thread(&TCPServer::handleClient, this, client).detach();
     }
+    std::cerr << "!!!SERVER STOPED!!!\n";
 }
 
 void TCPServer::handleClient(std::shared_ptr<ClientSession> client) {
     try {
         std::string msg;
-        while(client->receive(msg))
+        client->setConnected(true);
+        while(serverRunning.load() && client->receive(msg))
             handler.handleMessage(client, msg);
         clientDisconnect(client);
     } catch(std::exception& e){
         std::cerr << "Client thread ERROR: " << e.what() << '\n';
+        clientDisconnect(client);
     }
 }
 
 void TCPServer::clientDisconnect(std::shared_ptr<ClientSession> client) {
+    if(!client->getConnected()) return;
+
+    client->setConnected(false);
+
+    shutdown(client->getSocket(), SHUT_RDWR);
+
     sessionManager.remove(client);
 
     close(client->getSocket());
-    std::cout << "CLIENT WAS DISCONNECTED!\n";
+}
+
+void TCPServer::startClientMonitoring() {
+    monitorRunning = true;
+    monitor_thread = std::thread([this](){
+        while (monitorRunning.load()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(HEARTBEAT_INTERVAL_MS));
+
+            int64_t now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+
+            auto clients = sessionManager.getAll();
+
+            std::cerr << "MONITOR: START CHECKING CLIENTS LIVENESS\n";
+
+            for (const auto& client : clients) {
+                if(now - client->getLastActivity() > SESSION_TIMEOUT_MS) {
+                    clientDisconnect(client);
+                }
+            }
+        }
+    });
+
+    monitor_thread.detach();
 }

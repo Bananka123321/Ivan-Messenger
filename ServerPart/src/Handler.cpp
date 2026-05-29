@@ -24,6 +24,10 @@ Handler::Handler(SessionManager& sm) : sessionManager(sm), dispatcher(sessionMan
     handlers["getDialogsRequest"] = [this](std::shared_ptr<ClientSession> client, const nlohmann::json& j) {
         getDialogsRequest(client, j);
     };
+
+    handlers["ping"] = [this](std::shared_ptr<ClientSession> client, const nlohmann::json& j) {
+        ping(client, j);
+    };
 }
 
 Handler::~Handler() {}
@@ -31,6 +35,7 @@ Handler::~Handler() {}
 void Handler::handleMessage(std::shared_ptr<ClientSession> client, std::string& msg) {
     try {
         auto j = nlohmann::json::parse(msg);
+        sessionManager.updateActivity(client);
         std::string type = j["type"];
         if (handlers.find(type) != handlers.end()) {
             handlers[type](client, j);
@@ -139,7 +144,12 @@ void Handler::getDialogsRequest(std::shared_ptr<ClientSession> client, const nlo
     auto dialogs = diaManager.getUserDialogs(client->getUserId());
     std::vector<MetaDialog> metas;
     for (const auto& d : dialogs)
-        metas.push_back({d.peer_id, d.username});
+        metas.push_back({d.peer_id, d.username, d.last_msg_text, d.last_msg_timestamp, d.last_activity_time});
 
     dispatcher.sendTo(client, protocol::getDialogsResponse(!metas.empty(), metas));
+}
+
+void Handler::ping(std::shared_ptr<ClientSession> client, const nlohmann::json& j) {
+    sessionManager.updateActivity(client);
+    std::cout << "Successful ping!\n";
 }

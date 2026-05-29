@@ -2,6 +2,8 @@
 
 #include <string>
 #include <openssl/ssl.h>
+#include <atomic>
+#include <chrono>
 
 #include "../../common/PacketIO.h"
 
@@ -22,10 +24,18 @@ public:
     bool send(const std::string& message);
     bool receive(std::string& message);
 
+    int64_t getLastActivity() const;
+    void setLastActivity(const int64_t& newTimestamp);
+
+    bool getConnected() const;
+    void setConnected(const bool& newState);
+
 private:
     int socket;
     int user_id;
     std::string username;
     SSL* ssl;
     bool isAuthentificated;
+    std::atomic<int64_t> last_activity_time{0};
+    std::atomic<bool> connected{false};
 };

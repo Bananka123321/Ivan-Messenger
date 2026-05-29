@@ -14,6 +14,8 @@ public:
     std::shared_ptr<ClientSession> getByUserId(const int& user_id);
     std::vector<std::shared_ptr<ClientSession>> getAll();
 
+    void updateActivity(std::shared_ptr<ClientSession> client);
+
 private:
     std::vector<std::shared_ptr<ClientSession>> sessions;
     std::mutex mutex;

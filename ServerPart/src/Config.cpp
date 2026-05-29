@@ -24,7 +24,7 @@ std::optional<std::string> Config::load(const std::string& path) {
         const auto& db = j["database"];
         
         if (!db.contains("name") || !db.contains("user") || !db.contains("password") || !db.contains("host"))
-            return "Databse config missing required fields";
+            return "Database config missing required fields";
 
         db_config.name = db["name"].get<std::string>();
         db_config.user = db["user"].get<std::string>();
