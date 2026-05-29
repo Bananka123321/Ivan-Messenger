@@ -20,30 +20,31 @@ typedef SOCKET Socket;
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <atomic>
+#include <QObject>
 
 #include "MessageRouter.h"
 
 static SSL_CTX* g_ssl_ctx = nullptr;
 
-class TCPClient {
+class TCPClient{
 public:
-    TCPClient(int port_, MessageRouter* msgRouter_);
+    TCPClient(int port, MessageRouter* msgRouter);
     ~TCPClient();
 
     bool start();
 
     void handoverSocket();
     std::function<void(const std::string&)> onMessage;
-
 private:
-    int port;
+    int port_;
     int clientSocket;
-    MessageRouter* router;
+    MessageRouter* router_;
 
     bool setupSocket();
     void run();
 
     SSL* ssl;
     std::thread work;
+    std::thread ping;
     std::atomic<bool> running{false};
 };

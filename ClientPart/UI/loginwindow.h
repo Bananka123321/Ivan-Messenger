@@ -18,7 +18,7 @@ class LoginWindow : public QDialog
     Q_OBJECT
 
 public:
-    explicit LoginWindow(QWidget *parent_, MessageRouter* router_);
+    explicit LoginWindow(QWidget *parent, MessageRouter* router);
     ~LoginWindow();
 
     void loginSuccess();
@@ -33,7 +33,7 @@ signals:
 private:
     Ui::LoginWindow *ui;
 
-    MessageRouter* router;
+    MessageRouter* router_;
 
     void tryLogin();
     void tryRegister();

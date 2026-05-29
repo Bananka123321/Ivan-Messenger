@@ -2,8 +2,8 @@
 #include "ui_loginwindow.h"
 
 
-LoginWindow::LoginWindow(QWidget *parent_, MessageRouter* router_)
-    : QDialog(parent_), ui(new Ui::LoginWindow), router(router_) {
+LoginWindow::LoginWindow(QWidget *parent, MessageRouter* router)
+    : QDialog(parent), ui(new Ui::LoginWindow), router_(router) {
     ui->setupUi(this);
 
     connect(ui->okButton, &QPushButton::clicked, this, [this]() {

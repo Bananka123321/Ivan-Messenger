@@ -1,24 +1,24 @@
 #include "uicontroller.h"
 
-UIController::UIController(MessageRouter* router_, AppState* state_, Handler* handler_, AppController* ctrl_, DialogManager* manager_)
-    : router(router_), state(state_), handler(handler_), AController(ctrl_), manager(manager_) {}
+UIController::UIController(MessageRouter* router, AppState* state, Handler* handler, AppController* ctrl, DialogManager* manager)
+    : router_(router), state_(state), handler_(handler), AController_(ctrl), manager_(manager) {}
 
 void UIController::start() {
-    loginW = new LoginWindow(nullptr, router);
+    loginW = new LoginWindow(nullptr, router_);
 
-    connect(handler, &Handler::S_loginSuccess, loginW, [this](const std::string& login){
+    connect(handler_, &Handler::S_loginSuccess, loginW, [this](const std::string& login){
         loginW->loginSuccess();
     });
 
-    connect(handler, &Handler::S_loginFailed, loginW, [this](const std::string& reason){
+    connect(handler_, &Handler::S_loginFailed, loginW, [this](const std::string& reason){
         loginW->loginFailed(reason);
     });
 
-    connect(handler, &Handler::S_registerSuccess, loginW, [this](const std::string& login){
+    connect(handler_, &Handler::S_registerSuccess, loginW, [this](const std::string& login){
         loginW->registerSuccess();
     });
 
-    connect(handler, &Handler::S_registerFailed, loginW, [this](const std::string& reason){
+    connect(handler_, &Handler::S_registerFailed, loginW, [this](const std::string& reason){
         loginW->registerFailed(reason);
     });
 
@@ -27,18 +27,18 @@ void UIController::start() {
     });
 
 
-    mainW = new MainWindow(nullptr, state, manager);
+    mainW = new MainWindow(nullptr, state_, manager_);
 
-    AController->AttachUI(mainW, loginW);
+    AController_->AttachUI(mainW, loginW);
 
     loginW->show();
 
-    manager->start();
+    manager_->start();
 }
 
 void UIController::showMain() {
     loginW->hide();
     mainW->show();
 
-    router->getDialogsRequest();
+    router_->getDialogsRequest();
 }

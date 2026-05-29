@@ -2,11 +2,13 @@
 
 #include <string>
 #include <openssl/ssl.h>
+#include <QObject>
 
 #include "protocol.h"
 #include "PacketIO.h"
 
-class MessageRouter {
+class MessageRouter : public QObject{
+    Q_OBJECT
 public:
     MessageRouter();
 
@@ -16,6 +18,7 @@ public:
     void searchUser(const std::string& text);
     void historyRequest(int peer_id, int last_msg_id);
     void getDialogsRequest();
+    void ping();
 
     void setSSL(SSL* ssl_);
 

@@ -13,7 +13,7 @@
 class UIController : public QObject {
     Q_OBJECT
 public:
-    UIController(MessageRouter* router_, AppState* state_, Handler* handler_, AppController* ctrl_, DialogManager* manager_);
+    UIController(MessageRouter* router, AppState* state, Handler* handler, AppController* ctrl, DialogManager* manager);
 
     void start();
     void showMain();
@@ -22,9 +22,9 @@ private:
 
     MainWindow* mainW;
     LoginWindow* loginW;
-    AppController* AController;
-    MessageRouter* router;
-    AppState* state;
-    Handler* handler;
-    DialogManager* manager;
+    AppController* AController_;
+    MessageRouter* router_;
+    AppState* state_;
+    Handler* handler_;
+    DialogManager* manager_;
 };

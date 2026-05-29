@@ -20,7 +20,7 @@ class MainWindow : public QMainWindow {
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent_, AppState* state_, DialogManager* mnager_);
+    MainWindow(QWidget *parent, AppState* state, DialogManager* manager);
     ~MainWindow();
 
     // void newMessage(int sender, const std::string& text);
@@ -36,8 +36,8 @@ private:
     QCompleter* completer;
     QStringListModel* model;
 
-    AppState* state;
-    DialogManager* manager;
+    AppState* state_;
+    DialogManager* manager_;
 
     int selectedUserId = -1;
 

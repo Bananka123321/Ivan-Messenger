@@ -4,7 +4,7 @@
 QString IPADRESS_dev = "127.0.0.1";
 QString IPADRESS_dep = "31.192.108.37";
 
-TCPClient::TCPClient(int port_, MessageRouter* msgRouter_) : port(port_), clientSocket(-1), router(msgRouter_) {
+TCPClient::TCPClient(int port, MessageRouter* msgRouter) : port_(port), clientSocket(-1), router_(msgRouter) {
     SSL_load_error_strings();
     OpenSSL_add_ssl_algorithms();
 
@@ -60,7 +60,7 @@ bool TCPClient::setupSocket() {
 
     sockaddr_in serverAddr{};
     serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(port);
+    serverAddr.sin_port = htons(port_);
 
     if (inet_pton(AF_INET, IPADRESS_dep.toUtf8().constData(), &serverAddr.sin_addr) <= 0) {
         std::cerr << "Incorrect IP ADRESS\n";
@@ -87,5 +87,5 @@ bool TCPClient::setupSocket() {
 }
 
 void TCPClient::handoverSocket() {
-    router->setSSL(ssl);
+    router_->setSSL(ssl);
 }

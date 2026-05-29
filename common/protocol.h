@@ -123,6 +123,12 @@ inline std::string getDialogsRequest() {
     return j.dump();
 }
 
+inline std::string ping() {
+    nlohmann::json j;
+    j["type"] = "ping";
+    return j.dump();
+}
+
 //      SERVER --> CLIENT
 //=================================================================================================================================================================
 

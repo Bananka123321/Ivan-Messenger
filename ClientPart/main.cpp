@@ -13,9 +13,9 @@ int main(int argc, char *argv[]) {
     QApplication a(argc, argv);
     AppState* state = new AppState();
     MessageRouter* router = new MessageRouter();
-    AppController* AController = new AppController(router, state);
-    TCPClient* client = new TCPClient(6767, router);
     Handler* handler = new Handler();
+    AppController* AController = new AppController(router, state, handler);
+    TCPClient* client = new TCPClient(6767, router);
     DialogManager* manager = new DialogManager(handler, state);
     UIController* controller = new UIController(router, state, handler, AController, manager);
     StateChanger* binder = new StateChanger(handler, state);

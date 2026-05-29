@@ -3,8 +3,8 @@
 #include <QTimer>
 #include <QScrollBar>
 
-MainWindow::MainWindow(QWidget *parent_, AppState* state_, DialogManager* manager_)
-    : QMainWindow(parent_), ui(new Ui::MainWindows), state(state_), manager(manager_) {
+MainWindow::MainWindow(QWidget *parent, AppState* state, DialogManager* manager)
+    : QMainWindow(parent), ui(new Ui::MainWindows), state_(state), manager_(manager) {
     ui->setupUi(this);
 
     model = new QStringListModel(this);
@@ -29,13 +29,13 @@ MainWindow::MainWindow(QWidget *parent_, AppState* state_, DialogManager* manage
         if (text.isEmpty() || selectedUserId == -1) return;
         Message localMsg{
             -1,
-            state->getCurrentUserId(),
+            state_->getCurrentUserId(),
             selectedUserId,
             text.toStdString(),
             std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count()
         };
 
-        manager->addMessage(selectedUserId, localMsg);
+        manager_->addMessage(selectedUserId, localMsg);
 
         emit sendMessageRequest(selectedUserId, text.toStdString());
 
@@ -94,9 +94,9 @@ void MainWindow::refreshCurrentChat() {
     ui->chatView->clear();
     if(selectedUserId == -1) return;
 
-    std::string peerName = state->getUsername(selectedUserId);
+    std::string peerName = state_->getUsername(selectedUserId);
 
-    const auto* messages = manager->getMessages(selectedUserId);
+    const auto* messages = manager_->getMessages(selectedUserId);
     if(!messages) return;
 
     for (const auto& msg : *messages) {
@@ -120,10 +120,10 @@ void MainWindow::prependMessagesToView(const std::vector<Message>& messages) {
     QTextCursor cursor = ui->chatView->textCursor();
     cursor.movePosition(QTextCursor::Start);
 
-    std::string peerName = state->getUsername(selectedUserId);
+    std::string peerName = state_->getUsername(selectedUserId);
 
     for (const auto& msg : messages) {
-        if(msg.senderId != state->getCurrentUserId())
+        if(msg.senderId != state_->getCurrentUserId())
             ui->chatView->append(QString::fromStdString("[" + peerName + "] " + msg.text));
         else
             ui->chatView->append(QString::fromStdString("[YOU] " + msg.text));
@@ -137,21 +137,21 @@ void MainWindow::prependMessagesToView(const std::vector<Message>& messages) {
 void MainWindow::openDialog(int id) {
     selectedUserId = id;
     ui->chatView->clear();
-    ui->user->setText(QString::fromStdString(state->getUsername(id)));
+    ui->user->setText(QString::fromStdString(state_->getUsername(id)));
     ui->inputField->setFocus();
 
     emit loadHistoryRequest(id, std::numeric_limits<int>::max());
 }
 
 void MainWindow::appendMessageToView(const Message& msg) {
-    QString html = QString::fromStdString((msg.senderId == state->getCurrentUserId() ? "[YOU] " : "[" + state->getUsername(msg.senderId) + "] ") + msg.text);
+    QString html = QString::fromStdString((msg.senderId == state_->getCurrentUserId() ? "[YOU] " : "[" + state_->getUsername(msg.senderId) + "] ") + msg.text);
     ui->chatView->append(html);
     ui->chatView->verticalScrollBar()->setValue(ui->chatView->verticalScrollBar()->maximum());
 }
 
 void MainWindow::refreshDialogs() {
     ui->userWidget->clear();
-    auto dialogs = manager->getDialogs();
+    auto dialogs = manager_->getDialogs();
     for(const auto& dialog : dialogs) {
         QString displayText = QString::fromStdString(dialog.username + ": " + dialog.last_msg_text);
 

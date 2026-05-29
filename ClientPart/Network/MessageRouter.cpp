@@ -36,6 +36,11 @@ void MessageRouter::getDialogsRequest() {
     sendPacket(request);
 }
 
+void MessageRouter::ping() {
+    std::string request = protocol::ping();
+    sendPacket(request);
+}
+
 void MessageRouter::sendPacket(const std::string& msg) {
     PacketIO::sendPacket(ssl, msg);
 }

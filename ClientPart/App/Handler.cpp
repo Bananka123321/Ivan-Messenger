@@ -51,14 +51,14 @@ void Handler::handleMessage(const std::string& msg) {
 
 //=============================================================================================
 
-void Handler::onLoginResponse(const bool& success, const std::string& login, const std::string& reason, const int& user_id) {
+void Handler::onLoginResponse(const bool& success, const std::string& login, const std::string& reason, const int user_id) {
     if (success) {
         emit S_loginSuccess(login, user_id);
     } else
         emit S_loginFailed(reason);
 }
 
-void Handler::onRegisterResponse(const bool& success, const std::string& login, const std::string& reason, const int& user_id) {
+void Handler::onRegisterResponse(const bool& success, const std::string& login, const std::string& reason, const int user_id) {
     if (success) {
         emit S_registerSuccess(login, user_id);
     } else
@@ -69,7 +69,7 @@ void Handler::onUserList(const std::unordered_map<int, std::string>& users) {
     emit S_userList(users);
 }
 
-void Handler::onMessage(const int& from, const int& to, const std::string& text) {
+void Handler::onMessage(const int from, const int to, const std::string& text) {
     emit S_Message(from, to, text);
 }
 
@@ -81,7 +81,7 @@ void Handler::onError(const std::string& text) {
     std::cerr << text << '\n';
 }
 
-void Handler::onHistory(const bool& success, const int& peer_id, std::vector<Message> history, const std::string& reason) {
+void Handler::onHistory(const bool& success, const int peer_id, std::vector<Message> history, const std::string& reason) {
     if(success)
         emit S_HistoryLoaded(peer_id, history);
     else
