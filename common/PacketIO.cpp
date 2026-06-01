@@ -12,7 +12,7 @@ bool PacketIO::sendAll(SSL* ssl, const void* data, size_t size) {
 }
 
 bool PacketIO::sendPacket(SSL* ssl, const std::string& data) {
-    uint32_t len = htonl(data.size());
+    uint32_t len = htonl(static_cast<uint32_t>(data.size()));
 
     if (!sendAll(ssl, &len, sizeof(len)))
         return false;
@@ -26,7 +26,7 @@ bool PacketIO::sendPacket(SSL* ssl, const std::string& data) {
 bool PacketIO::recvAll(SSL* ssl, void* data, size_t size) {
     size_t total = 0;
     while (total < size) {
-        int bytes = SSL_read(ssl, (char*)data + total, size - total);
+        int bytes = SSL_read(ssl, static_cast<char*>(data) + total, static_cast<int>(size - total));
         if (bytes <= 0) {
             int err = SSL_get_error(ssl, bytes);
             if (err == SSL_ERROR_ZERO_RETURN) {

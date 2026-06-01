@@ -1,4 +1,5 @@
 #include "appcontroller.h"
+#define NOMINMAX
 
 AppController::AppController(MessageRouter* router, AppState* state, Handler* handler, TCPClient* client) : router_(router), state_(state),  handler_(handler), client_(client) {}
 
