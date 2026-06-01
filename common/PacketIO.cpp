@@ -3,7 +3,7 @@
 bool PacketIO::sendAll(SSL* ssl, const void* data, size_t size) {
     size_t total = 0;
     while (total < size) {
-        int sent = SSL_write(ssl, (char*)data + total, size - total);
+        int sent = SSL_write(ssl, static_cast<const char*>(data) + total, static_cast<int>(size - total));
         if (sent <= 0) return false;
         total += sent;
     }
