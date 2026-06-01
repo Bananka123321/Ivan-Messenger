@@ -122,11 +122,15 @@ void MainWindow::prependMessagesToView(const std::vector<Message>& messages) {
 
     std::string peerName = state_->getUsername(selectedUserId);
 
-    for (const auto& msg : messages) {
-        if(msg.senderId != state_->getCurrentUserId())
-            ui->chatView->append(QString::fromStdString("[" + peerName + "] " + msg.text));
+    for (auto it = messages.rbegin(); it != messages.rend(); ++it) {
+        const auto& msg = *it;
+        QString line;
+        if(msg.senderId == state_->getCurrentUserId())
+            line = QString::fromStdString("[YOU] " + msg.text);
         else
-            ui->chatView->append(QString::fromStdString("[YOU] " + msg.text));
+            line = QString::fromStdString("[" + peerName + "] " + msg.text);
+
+        cursor.insertText(line + "\n");
     }
 
     int newMax = scrollbar->maximum();
@@ -171,54 +175,3 @@ void MainWindow::refreshDialogs() {
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

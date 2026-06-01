@@ -25,7 +25,7 @@ std::vector<Message> messageManager::getHistory(int user_a, int user_b, int last
         auto rows = txn.exec_params(
             "SELECT id, sender_id, receiver_id, text, timestamp FROM messages"
             " WHERE ((sender_id = $1 AND receiver_id = $2) OR (sender_id = $2 AND receiver_id = $1)) AND id < $3"
-            " ORDER BY id LIMIT $4",
+            " ORDER BY id DESC LIMIT $4",
             user_a, user_b, last_msg_id, limit
         );
 
