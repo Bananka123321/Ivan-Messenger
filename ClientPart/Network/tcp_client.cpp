@@ -24,18 +24,34 @@ TCPClient::~TCPClient() {
     }
 
     if (clientSocket != -1) {
+#ifdef _WIN32
+        closesocket(clientSocket);
+#else
         close(clientSocket);
+#endif
     }
 }
 
 bool TCPClient::start() {
+#ifdef _WIN32
+    WSADATA wsa;
+    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
+        std::cerr << "WSAStartup failed\n";
+        return false;
+    }
+#endif
+
     if(work.joinable()) work.join();
     if(ssl) {
         SSL_free(ssl);
         ssl = nullptr;
     }
     if(clientSocket != -1) {
+#ifdef _WIN32
+        closesocket(clientSocket);
+#else
         close(clientSocket);
+#endif
         clientSocket = -1;
     }
 
@@ -64,6 +80,12 @@ bool TCPClient::setupSocket() {
     }
 
     if (::connect(clientSocket, (sockaddr*)&serverAddr, sizeof(serverAddr)) == -1) {
+#ifdef _WIN32
+        closesocket(clientSocket);
+#else
+        close(clientSocket);
+#endif
+        clientSocket = -1;
         return false;
     }
 
@@ -108,7 +130,11 @@ void TCPClient::disconnect() {
         ssl = nullptr;
     }
     if (clientSocket != -1) {
+#ifdef _WIN32
+        closesocket(clientSocket);
+#else
         close(clientSocket);
+#endif
     }
     if(work.joinable()) work.join();
 }
