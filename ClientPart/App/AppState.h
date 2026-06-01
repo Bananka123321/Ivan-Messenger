@@ -11,6 +11,7 @@ private:
     struct User {
         std::string username;
         int user_id;
+        std::string token;
     };
 
 public:
@@ -24,6 +25,9 @@ public:
 
     const int& getCurrentUserId() const;
     void setCurrentUserId(const int& user_id);
+
+    const std::string getCurrentToken() const;
+    void setCurrentToken(const std::string& token);
 
     const std::string getUsername(const int& id) const;
 

@@ -1,6 +1,9 @@
 #include "../include/TCPServer.h"
+#include "../include/SignalHandler.h"
 
 int main() {
+    SignalHandler::Setup();
+
     if(auto error = Config::load("config.json")){
         std::cerr << "Failed to laod config: " << *error << '\n';
         return 1;
@@ -8,10 +11,19 @@ int main() {
 
     TCPServer server(Config::getServer().port);
 
-    if (!server.start()) {
-        std::cerr << "Server failed to start\n";
-        return 1;
-    }
+    std::thread serverThread([&server](){
+        if (!server.start())
+            std::cerr << "Server failed to start\n";
+    });
+
+    while(!SignalHandler::isShutdownRequested())
+        pause();
+
+    std::cerr << "\nSERVER: signal shutdown received\n";
+    server.stop();
+
+    if(serverThread.joinable())
+        serverThread.join();
 
     return 0;
 }

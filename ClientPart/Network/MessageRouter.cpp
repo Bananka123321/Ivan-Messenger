@@ -41,6 +41,17 @@ void MessageRouter::ping() {
     sendPacket(request);
 }
 
+void MessageRouter::resumeConnectionRequest(const std::string& token) {
+    std::string request = protocol::resumeConnectionRequest(token);
+    sendPacket(request);
+}
+
 void MessageRouter::sendPacket(const std::string& msg) {
+    std::lock_guard<std::mutex> lock(mutex);
+    std::cerr << "MSG: " << msg << '\n';
+    if(!ssl) {
+        std::cerr << "SSL not exist((\n";
+        return;
+    }
     PacketIO::sendPacket(ssl, msg);
 }

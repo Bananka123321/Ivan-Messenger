@@ -129,25 +129,34 @@ inline std::string ping() {
     return j.dump();
 }
 
+inline std::string resumeConnectionRequest(const std::string& token) {
+    nlohmann::json j;
+    j["type"] = "resumeConnectionRequest";
+    j["token"] = token;
+    return j.dump();
+}
+
 //      SERVER --> CLIENT
 //=================================================================================================================================================================
 
-inline std::string loginResponse(const bool& success, const int& user_id, const std::string& login, const std::string& reason = "") {
+inline std::string loginResponse(const bool& success, const int& user_id, const std::string& login, const std::string& token, const std::string& reason = "") {
     nlohmann::json j;
     j["type"] = "loginResponse";
     j["success"] = success;
     j["user_id"] = user_id;
     j["username"] = login;
+    j["token"] = token;
     j["error"] = reason;
     return j.dump();
 }
 
-inline std::string registerResponse(const bool& success, const int& user_id, const std::string& login, const std::string& reason = "") {
+inline std::string registerResponse(const bool& success, const int& user_id, const std::string& login, const std::string& token, const std::string& reason = "") {
     nlohmann::json j;
     j["type"] = "registerResponse";
     j["success"] = success;
     j["user_id"] = user_id;
     j["username"] = login;
+    j["token"] = token;
     j["error"] = reason;
     return j.dump();
 }
@@ -196,6 +205,13 @@ inline std::string getDialogsResponse(const bool& success, const std::vector<Met
     j["success"] = success;
     j["dialogs"] = dialogs;
     j["error"] = reason;
+    return j.dump();
+}
+
+inline std::string resumeConnectionResponse(bool success) {
+    nlohmann::json j;
+    j["type"] = "resumeConnectionResponse";
+    j["success"] = success;
     return j.dump();
 }
 

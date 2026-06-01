@@ -3,6 +3,7 @@
 #include <string>
 #include <openssl/ssl.h>
 #include <QObject>
+#include <mutex>
 
 #include "protocol.h"
 #include "PacketIO.h"
@@ -19,10 +20,12 @@ public:
     void historyRequest(int peer_id, int last_msg_id);
     void getDialogsRequest();
     void ping();
+    void resumeConnectionRequest(const std::string& token);
 
     void setSSL(SSL* ssl_);
 
 private:
     SSL* ssl;
+    std::mutex mutex;
     void sendPacket(const std::string& msg);
 };

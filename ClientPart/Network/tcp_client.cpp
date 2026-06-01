@@ -25,26 +25,25 @@ TCPClient::~TCPClient() {
     }
 
     if (clientSocket != -1) {
-#ifdef _WIN32
-        closesocket(clientSocket);
-#else
         close(clientSocket);
-#endif
     }
 }
 
 bool TCPClient::start() {
-#ifdef _WIN32
-    WSADATA wsa;
-    WSAStartup(MAKEWORD(2,2), &wsa);
-#endif
-    if (!setupSocket()) return false;
-    work = std::thread([this]() {
-        std::string msg;
-        while (PacketIO::recvPacket(ssl, msg) && onMessage)
-            onMessage(msg);
-    });
+    if(work.joinable()) work.join();
+    if(ssl) {
+        SSL_free(ssl);
+        ssl = nullptr;
+    }
+    if(clientSocket != -1) {
+        close(clientSocket);
+        clientSocket = -1;
+    }
 
+    if (!setupSocket()) return false;
+    work = std::thread([this](){
+        runLoop();
+    });
     return true;
 }
 
@@ -62,12 +61,12 @@ bool TCPClient::setupSocket() {
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(port_);
 
-    if (inet_pton(AF_INET, IPADRESS_dep.toUtf8().constData(), &serverAddr.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, IPADRESS_dev.toUtf8().constData(), &serverAddr.sin_addr) <= 0) {
         std::cerr << "Incorrect IP ADRESS\n";
         return false;
     }
 
-    if (connect(clientSocket, (sockaddr*)&serverAddr, sizeof(serverAddr)) == -1) {
+    if (::connect(clientSocket, (sockaddr*)&serverAddr, sizeof(serverAddr)) == -1) {
         std::cerr << "Connect failed\n";
         return false;
     }
@@ -88,4 +87,35 @@ bool TCPClient::setupSocket() {
 
 void TCPClient::handoverSocket() {
     router_->setSSL(ssl);
+}
+
+void TCPClient::runLoop() {
+    bConnected.store(true);
+
+    QMetaObject::invokeMethod(this, [this](){
+        emit connected();
+    });
+
+    std::string msg;
+    while (PacketIO::recvPacket(ssl, msg))
+        onMessage(msg);
+
+    QMetaObject::invokeMethod(this, [this](){
+        std::cerr << "TCPCLIENT: Connection lost!\n";
+
+        emit connectionLose();
+    });
+}
+
+void TCPClient::disconnect() {
+    if(!bConnected.load()) return;
+    if(ssl) {
+        SSL_shutdown(ssl);
+        SSL_free(ssl);
+        ssl = nullptr;
+    }
+    if (clientSocket != -1) {
+        close(clientSocket);
+    }
+    if(work.joinable()) work.join();
 }

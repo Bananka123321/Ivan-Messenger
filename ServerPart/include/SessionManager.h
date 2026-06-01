@@ -4,6 +4,9 @@
 #include <mutex>
 #include <vector>
 #include <algorithm>
+#include <unordered_map>
+#include <optional>
+
 #include "ClientSession.h"
 
 class SessionManager {
@@ -15,8 +18,13 @@ public:
     std::vector<std::shared_ptr<ClientSession>> getAll();
 
     void updateActivity(std::shared_ptr<ClientSession> client);
+    std::optional<int> checkToken(const std::string& token);
 
 private:
     std::vector<std::shared_ptr<ClientSession>> sessions;
+    std::unordered_map<std::string, int> tokens;
     std::mutex mutex;
+
+    friend class Handler;
+    void addToken(const std::string& token, int user_id);
 };

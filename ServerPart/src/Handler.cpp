@@ -28,6 +28,10 @@ Handler::Handler(SessionManager& sm) : sessionManager(sm), dispatcher(sessionMan
     handlers["ping"] = [this](std::shared_ptr<ClientSession> client, const nlohmann::json& j) {
         ping(client, j);
     };
+
+    handlers["resumeConnectionRequest"] = [this](std::shared_ptr<ClientSession> client, const nlohmann::json& j) {
+        resumeConnectionRequest(client, j);
+    };
 }
 
 Handler::~Handler() {}
@@ -48,6 +52,24 @@ void Handler::handleMessage(std::shared_ptr<ClientSession> client, std::string& 
     }
 }
 
+static std::mt19937& getGlobalRNG() {
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    return gen;
+}
+
+std::string Handler::generateToken() {
+    static std::mutex rng_mutex;
+    std::lock_guard<std::mutex> lock(rng_mutex);
+
+    auto& gen = getGlobalRNG();
+    std::uniform_int_distribution<uint32_t> dis(0, 0xFFFFFFFF);
+    std::stringstream ss;
+    for(int i = 0; i < 4; i++)
+        ss << std::hex << std::setw(8) << std::setfill('0') << dis(gen);
+    return ss.str();
+}
+
 
 
 //============================================================================================================================
@@ -62,9 +84,10 @@ void Handler::loginRequest(std::shared_ptr<ClientSession> client, const nlohmann
     }
 
     auto res = userManager.loginUser(j["username"], j["password"]);
-    dispatcher.sendTo(client, protocol::loginResponse(res.success, res.user_id, j["username"], res.error));
-
-    if (!res.success) return;
+    if (!res.success) {
+        dispatcher.sendTo(client, protocol::loginResponse(res.success, res.user_id, j["username"], "", res.error));
+        return;
+    }
 
     authSuccess(client, res.user_id, j["username"]);
 }
@@ -77,9 +100,10 @@ void Handler::registerRequest(std::shared_ptr<ClientSession> client, const nlohm
     }
     
     auto res = userManager.registerUser(j["username"],j["password"]);
-    dispatcher.sendTo(client, protocol::registerResponse(res.success, res.user_id, j["username"], res.error));
-
-    if (!res.success) return;
+    if (!res.success) {
+        dispatcher.sendTo(client, protocol::loginResponse(res.success, res.user_id, j["username"], "", res.error));
+        return;
+    }
 
     authSuccess(client, res.user_id, j["username"]);
 }
@@ -87,11 +111,17 @@ void Handler::registerRequest(std::shared_ptr<ClientSession> client, const nlohm
 void Handler::authSuccess(std::shared_ptr<ClientSession> client, const int& id, const std::string& username) {
     client->setUser(id, username);
     client->setIsAuthentificated(true);
+    std::string token = generateToken();
+    sessionManager.addToken(token, id);
+    dispatcher.sendTo(client, protocol::loginResponse(true, id, username, token, ""));
     sessionManager.add(client);
 }
 
 void Handler::privateMessage(std::shared_ptr<ClientSession> client, const nlohmann::json& j) {
-    if (!client->getIsAuthentificated()) return;
+    if (!client->getIsAuthentificated()) {
+        std::cerr << "SORRY, not auth\n";
+        return;
+    }
     
     std::string error;
     if(!Validator::valid_string_field(j, "text", Validator::message, error)) {
@@ -151,5 +181,26 @@ void Handler::getDialogsRequest(std::shared_ptr<ClientSession> client, const nlo
 
 void Handler::ping(std::shared_ptr<ClientSession> client, const nlohmann::json& j) {
     sessionManager.updateActivity(client);
-    std::cout << "Successful ping!\n";
+}
+
+void Handler::resumeConnectionRequest(std::shared_ptr<ClientSession> client, const nlohmann::json& j) {
+    std::string token = j.value("token", "");
+    if (token.empty()) {
+        std::cerr << "token empty\n";
+        dispatcher.sendTo(client, protocol::resumeConnectionResponse(false));
+        return;
+    }
+
+    auto user_id = sessionManager.checkToken(token);
+    if(!user_id.has_value()) {
+        std::cerr << "token don't success\n";
+        dispatcher.sendTo(client, protocol::resumeConnectionResponse(false));
+        return;
+    }
+
+    int id = user_id.value();
+    client->setUser(id, "hz");
+    client->setIsAuthentificated(true);
+    sessionManager.add(client);
+    dispatcher.sendTo(client, protocol::resumeConnectionResponse(true));
 }

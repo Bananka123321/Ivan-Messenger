@@ -14,8 +14,8 @@ int main(int argc, char *argv[]) {
     AppState* state = new AppState();
     MessageRouter* router = new MessageRouter();
     Handler* handler = new Handler();
-    AppController* AController = new AppController(router, state, handler);
     TCPClient* client = new TCPClient(6767, router);
+    AppController* AController = new AppController(router, state, handler, client);
     DialogManager* manager = new DialogManager(handler, state);
     UIController* controller = new UIController(router, state, handler, AController, manager);
     StateChanger* binder = new StateChanger(handler, state);

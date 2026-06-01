@@ -155,8 +155,6 @@ void TCPServer::startClientMonitoring() {
 
             auto clients = sessionManager.getAll();
 
-            std::cerr << "MONITOR: START CHECKING CLIENTS LIVENESS\n";
-
             for (const auto& client : clients) {
                 if(now - client->getLastActivity() > SESSION_TIMEOUT_MS) {
                     clientDisconnect(client);

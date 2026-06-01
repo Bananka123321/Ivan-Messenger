@@ -12,6 +12,7 @@ set(SERVER_SOURCES
     src/Config.cpp
     src/DB_MessageManager.cpp
     src/DB_DialogManager.cpp
+    src/SignalHandler.cpp
     
     ../common/Validator.cpp
     ../common/PacketIO.cpp

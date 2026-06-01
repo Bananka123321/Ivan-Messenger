@@ -2,11 +2,11 @@
 
 Handler::Handler() {
     handlers["loginResponse"] = [this] (const nlohmann::json& j) {
-        onLoginResponse(j["success"], j["username"], j["error"], j["user_id"]);
+        onLoginResponse(j["success"], j["user_id"], j["username"], j["token"], j["error"]);
     };
 
     handlers["registerResponse"] = [this] (const nlohmann::json& j) {
-        onRegisterResponse(j["success"], j["username"], j["error"], j["user_id"]);
+        onRegisterResponse(j["success"], j["user_id"], j["username"], j["token"], j["error"]);
     };
 
     handlers["userList"] = [this] (const nlohmann::json& j) {
@@ -32,6 +32,10 @@ Handler::Handler() {
     handlers["getDialogsResponse"] = [this] (const nlohmann::json& j) {
         onDialogs(j["success"], j["dialogs"], j["error"]);
     };
+
+    handlers["resumeConnectionResponse"] = [this] (const nlohmann::json& j) {
+        onConnectionResponse(j["success"]);
+    };
 }
 
 void Handler::handleMessage(const std::string& msg) {
@@ -51,16 +55,16 @@ void Handler::handleMessage(const std::string& msg) {
 
 //=============================================================================================
 
-void Handler::onLoginResponse(const bool& success, const std::string& login, const std::string& reason, const int user_id) {
+void Handler::onLoginResponse(const bool& success, const int user_id, const std::string& login, const std::string& token, const std::string& reason) {
     if (success) {
-        emit S_loginSuccess(login, user_id);
+        emit S_loginSuccess(login, user_id, token);
     } else
         emit S_loginFailed(reason);
 }
 
-void Handler::onRegisterResponse(const bool& success, const std::string& login, const std::string& reason, const int user_id) {
+void Handler::onRegisterResponse(const bool& success, const int user_id, const std::string& login, const std::string& token, const std::string& reason) {
     if (success) {
-        emit S_registerSuccess(login, user_id);
+        emit S_registerSuccess(login, user_id, token);
     } else
         emit S_registerFailed(reason);
 }
@@ -93,4 +97,9 @@ void Handler::onDialogs(const bool& success, const std::vector<MetaDialog>& dial
         emit S_DialogsLoaded(dialogs);
     else
         onError(reason);
+}
+
+void Handler::onConnectionResponse(const bool& success) {
+    if(success)
+        emit S_ConnectionSucess();
 }
