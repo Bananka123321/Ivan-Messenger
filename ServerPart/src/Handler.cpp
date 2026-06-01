@@ -112,7 +112,7 @@ void Handler::authSuccess(std::shared_ptr<ClientSession> client, const int& id, 
     client->setUser(id, username);
     client->setIsAuthentificated(true);
     std::string token = generateToken();
-    sessionManager.addToken(token, id);
+    userManager.createSession(id, token);
     dispatcher.sendTo(client, protocol::loginResponse(true, id, username, token, ""));
     sessionManager.add(client);
 }
@@ -191,9 +191,8 @@ void Handler::resumeConnectionRequest(std::shared_ptr<ClientSession> client, con
         return;
     }
 
-    auto user_id = sessionManager.checkToken(token);
+    auto user_id = userManager.getUserIdByToken(token);
     if(!user_id.has_value()) {
-        std::cerr << "token don't success\n";
         dispatcher.sendTo(client, protocol::resumeConnectionResponse(false));
         return;
     }

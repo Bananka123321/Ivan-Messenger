@@ -86,3 +86,35 @@ std::vector<User> UserManager::searchUsers(const std::string& query) {
         return {};
     }
 }
+
+void UserManager::createSession(int user_id, const std::string& token) {
+    try {
+        pqxx::work txn(conn);
+        txn.exec_params("INSERT INTO user_sessions (user_id, token) VALUES($1, $2)", user_id, token);
+        txn.commit();
+    } catch(const std::exception& e) {
+        std::cerr << e.what() << '\n';
+    }
+}
+
+std::optional<int> UserManager::getUserIdByToken(const std::string& token) {
+    try {
+        pqxx::work txn(conn);
+        auto res = txn.exec_params("SELECT user_id FROM user_sessions WHERE token = $1", token);
+        if(res.empty()) return std::nullopt;
+        return res[0]["user_id"].as<int>();
+    } catch(const std::exception& e) {
+        std::cerr << e.what() << '\n';
+        return std::nullopt;
+    }   
+}
+
+void UserManager::deleteSession(const std::string& token) {
+    try {
+        pqxx::work txn(conn);
+        txn.exec_params("DELETE FROM user_sessions WHERE token = $1", token);
+        txn.commit();
+    } catch (const std::exception& e) {
+        std::cerr << "DB Error deleting session: " << e.what() << '\n';
+    }
+}

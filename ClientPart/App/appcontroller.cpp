@@ -26,6 +26,7 @@ void AppController::AttachUI(MainWindow* mainW, LoginWindow* loginW) {
     connect(this, &AppController::ping, router_, &MessageRouter::ping, Qt::QueuedConnection);
 
     connect(handler_, &Handler::S_loginSuccess, this, [this](const std::string&, int, const std::string&){
+        router_->setReconnecting(false);
         startPing();
     });
 
@@ -35,10 +36,13 @@ void AppController::AttachUI(MainWindow* mainW, LoginWindow* loginW) {
     });
 
     connect(client_, &TCPClient::connected, this, [this](){
+        if(state_->getCurrentToken().empty())
+            return;
         router_->resumeConnectionRequest(state_->getCurrentToken());
     });
 
     connect(handler_, &Handler::S_ConnectionSucess, this, [this](){
+        router_->setReconnecting(false);
         startPing();
     });
 }
@@ -50,7 +54,6 @@ AppController::~AppController() {
 void AppController::startPing() {
     if(pingTimer) return;
 
-    std::cerr << "appcontroller: START PING\n";
     pingTimer = new QTimer(this);
     connect(pingTimer, &QTimer::timeout, this, [this](){
         emit ping();
@@ -60,14 +63,14 @@ void AppController::startPing() {
 
 void AppController::stopPing() {
     if(!pingTimer) return;
-    std::cerr << "appcontroller: STOP PING\n";
     pingTimer->stop();
     pingTimer->deleteLater();
     pingTimer = nullptr;
 }
 
 void AppController::startReconnect() {
-    std::cerr << "appcontroller: START RECONNECT\n";
+    router_->setReconnecting(true);
+
     if(reconnectTimer && reconnectTimer->isActive()) return;
     if(!reconnectTimer) {
         reconnectTimer = new QTimer(this);
@@ -77,14 +80,13 @@ void AppController::startReconnect() {
             bool ok = client_->start();
             if(ok) {
                 reconnectAttempts = 0;
-                startPing();
             } else {
                 reconnectAttempts++;
                 if(reconnectAttempts <= 10) {
                     int delay = std::min(1000 * (1 << reconnectAttempts), MAX_RECONNECT_TIME_MS);
                     reconnectTimer->start(delay);
                 } else {
-                    std::cerr << "Failed to reconnect after 10 attempts\n";
+                    router_->setReconnecting(false);
                 }
             }
         });
