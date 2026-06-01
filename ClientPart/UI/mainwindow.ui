@@ -31,277 +31,6 @@
   <property name="autoFillBackground">
    <bool>false</bool>
   </property>
-  <property name="styleSheet">
-   <string notr="true">/* ========================================
-   GLOBAL
-   ======================================== */
-QWidget {
-    background-color: #1E1E2E;
-    color: #E0E0E5;
-    font-family: &quot;Inter&quot;, &quot;Segoe UI&quot;, &quot;Roboto&quot;, &quot;Ubuntu&quot;, sans-serif;
-    font-size: 14px;
-    line-height: 1.4;
-}
-
-/* ========================================
-   MAIN CONTAINERS
-   ======================================== */
-QMainWindow, QDialog {
-    background-color: #1E1E2E;
-    border: none;
-}
-QFrame {
-    background-color: #252535;
-    border: 1px solid #404050;
-    border-radius: 8px;
-}
-
-/* ========================================
-   BUTTONS
-   ======================================== */
-QPushButton {
-    background-color: #4A90E2;
-    color: #FFFFFF;
-    border: none;
-    border-radius: 6px;
-    padding: 8px 16px;
-    font-weight: 500;
-}
-QPushButton:hover { background-color: #5A9EEF; }
-QPushButton:pressed { background-color: #3A7BC8; }
-QPushButton:disabled {
-    background-color: #404050;
-    color: #808090;
-}
-
-QToolButton {
-    background-color: transparent;
-    color: #A0A0B0;
-    border: none;
-    border-radius: 4px;
-    padding: 6px;
-}
-QToolButton:hover {
-    background-color: #2A2A3A;
-    color: #E0E0E5;
-}
-
-/* ========================================
-   INPUTS
-   ======================================== */
-QLineEdit, QTextEdit, QPlainTextEdit {
-    background-color: #2A2A3A;
-    color: #E0E0E5;
-    border: 1px solid #404050;
-    border-radius: 6px;
-    padding: 10px 12px;
-    selection-background-color: #4A90E2;
-    selection-color: #FFFFFF;
-}
-QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus {
-    border-color: #4A90E2;
-    background-color: #2D2D40;
-}
-QLineEdit:disabled, QTextEdit:disabled, QPlainTextEdit:disabled {
-    background-color: #202030;
-    color: #606070;
-}
-
-/* ========================================
-   SCROLLBARS
-   ======================================== */
-QScrollBar:vertical, QScrollBar:horizontal {
-    background-color: #202030;
-    border: none;
-    width: 10px;
-    height: 10px;
-    margin: 0;
-}
-QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
-    background-color: #505060;
-    border-radius: 5px;
-    min-height: 20px;
-    min-width: 20px;
-}
-QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover {
-    background-color: #707080;
-}
-QScrollBar::add-line, QScrollBar::sub-line,
-QScrollBar::add-page, QScrollBar::sub-page {
-    background: none;
-    border: none;
-    height: 0px;
-    width: 0px;
-}
-
-/* ========================================
-   LISTS &amp; VIEWS (Contact/Chat list)
-   ======================================== */
-QListView, QListWidget, QTableView {
-    background-color: #252535;
-    border: 1px solid #404050;
-    border-radius: 6px;
-    padding: 4px;
-}
-QListView::item, QListWidget::item {
-    padding: 12px 16px;
-    border-radius: 6px;
-}
-QListView::item:hover, QListWidget::item:hover {
-    background-color: #2A2A3A;
-}
-QListView::item:selected, QListWidget::item:selected {
-    background-color: #4A90E2;
-    color: #FFFFFF;
-}
-
-/* ========================================
-   MESSAGE BUBBLES
-   (Требуют setObjectName(&quot;msgSent&quot;) / setObjectName(&quot;msgReceived&quot;))
-   ======================================== */
-QFrame#msgSent {
-    background-color: #0066CC;
-    border-radius: 12px 12px 2px 12px;
-    padding: 10px 14px;
-}
-QFrame#msgReceived {
-    background-color: #3A3A4A;
-    border-radius: 12px 12px 12px 2px;
-    padding: 10px 14px;
-}
-QLabel#msgTime {
-    color: #808090;
-    font-size: 11px;
-    padding-top: 4px;
-}
-QLabel#msgStatus {
-    color: #4CAF50;
-    font-size: 11px;
-}
-
-/* ========================================
-   SEARCH &amp; HEADER
-   ======================================== */
-QLineEdit#searchBar {
-    border-radius: 20px;
-    padding: 8px 16px;
-    background-color: #2A2A3A;
-}
-QLabel#headerTitle {
-    font-size: 18px;
-    font-weight: 600;
-    color: #E0E0E5;
-    padding: 12px 0;
-}
-QFrame#statusIndicator {
-    background-color: #4CAF50;
-    border-radius: 4px;
-    width: 10px;
-    height: 10px;
-}
-QFrame#statusIndicator[status=&quot;offline&quot;] { background-color: #FF5252; }
-QFrame#statusIndicator[status=&quot;typing&quot;]  { background-color: #FFC107; }
-
-/* ========================================
-   PROGRESS BAR (File transfer)
-   ======================================== */
-QProgressBar {
-    background-color: #2A2A3A;
-    border: 1px solid #404050;
-    border-radius: 6px;
-    height: 8px;
-    text-align: center;
-}
-QProgressBar::chunk {
-    background-color: #4A90E2;
-    border-radius: 4px;
-}
-
-/* ========================================
-   COMBO BOX &amp; MENUS
-   ======================================== */
-QComboBox {
-    background-color: #2A2A3A;
-    color: #E0E0E5;
-    border: 1px solid #404050;
-    border-radius: 6px;
-    padding: 8px 12px;
-}
-QComboBox::drop-down {
-    border: none;
-    width: 20px;
-}
-QComboBox QAbstractItemView {
-    background-color: #252535;
-    border: 1px solid #404050;
-    selection-background-color: #4A90E2;
-    selection-color: #FFFFFF;
-}
-QMenu {
-    background-color: #252535;
-    border: 1px solid #404050;
-    border-radius: 8px;
-    padding: 8px;
-}
-QMenu::item {
-    padding: 8px 24px;
-    border-radius: 4px;
-}
-QMenu::item:selected {
-    background-color: #2A2A3A;
-}
-
-/* ========================================
-   CHECKBOX &amp; RADIO
-   ======================================== */
-QCheckBox, QRadioButton { spacing: 8px; }
-QCheckBox::indicator, QRadioButton::indicator {
-    width: 18px;
-    height: 18px;
-    border: 2px solid #404050;
-    border-radius: 4px;
-    background-color: #2A2A3A;
-}
-QCheckBox::indicator:checked, QRadioButton::indicator:checked {
-    background-color: #4A90E2;
-    border-color: #4A90E2;
-}
-QRadioButton::indicator { border-radius: 9px; }
-
-/* ========================================
-   TAB WIDGET
-   ======================================== */
-QTabWidget::pane {
-    border: 1px solid #404050;
-    border-radius: 6px;
-}
-QTabBar::tab {
-    background-color: #202030;
-    color: #A0A0B0;
-    padding: 10px 20px;
-    border-radius: 6px 6px 0 0;
-    margin-right: 4px;
-}
-QTabBar::tab:selected {
-    background-color: #4A90E2;
-    color: #FFFFFF;
-}
-QTabBar::tab:hover:!selected {
-    background-color: #2A2A3A;
-}
-
-/* ========================================
-   TOOLTIP
-   ======================================== */
-QToolTip {
-    background-color: #303040;
-    color: #E0E0E5;
-    border: 1px solid #404050;
-    border-radius: 4px;
-    padding: 6px 10px;
-    font-size: 12px;
-}</string>
-  </property>
   <widget class="QWidget" name="centralwidget">
    <property name="sizePolicy">
     <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
@@ -378,12 +107,11 @@ QToolTip {
             <property name="font">
              <font>
               <family>Inter</family>
-              <pointsize>-1</pointsize>
               <bold>false</bold>
              </font>
             </property>
             <property name="text">
-             <string>ADMINUSERNAME</string>
+             <string>IVAN-MESSANGER BETTER MAX-MESSANGER</string>
             </property>
            </widget>
           </item>
@@ -400,8 +128,14 @@ QToolTip {
           <property name="cursor" stdset="0">
            <cursorShape>CrossCursor</cursorShape>
           </property>
+          <property name="mouseTracking">
+           <bool>false</bool>
+          </property>
           <property name="readOnly">
            <bool>true</bool>
+          </property>
+          <property name="textInteractionFlags">
+           <set>Qt::TextBrowserInteraction</set>
           </property>
          </widget>
         </item>
@@ -434,6 +168,12 @@ QToolTip {
             <property name="text">
              <string>SEND</string>
             </property>
+            <property name="autoDefault">
+             <bool>true</bool>
+            </property>
+            <property name="default">
+             <bool>true</bool>
+            </property>
            </widget>
           </item>
          </layout>
@@ -462,35 +202,6 @@ QToolTip {
           <property name="rightMargin">
            <number>15</number>
           </property>
-          <item>
-           <widget class="QPushButton" name="settingsButton">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="autoFillBackground">
-             <bool>false</bool>
-            </property>
-            <property name="text">
-             <string/>
-            </property>
-            <property name="icon">
-             <iconset>
-              <normaloff>../../../../Downloads/more.png</normaloff>../../../../Downloads/more.png</iconset>
-            </property>
-            <property name="iconSize">
-             <size>
-              <width>32</width>
-              <height>32</height>
-             </size>
-            </property>
-            <property name="autoRepeat">
-             <bool>false</bool>
-            </property>
-           </widget>
-          </item>
           <item>
            <widget class="QLineEdit" name="searchLineEdit">
             <property name="sizePolicy">

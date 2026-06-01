@@ -1,0 +1,122 @@
+QWidget {
+    background-color: #1e1e2e;
+    color: #cdd6f4;
+    font-family: "Segoe UI", "Roboto", sans-serif;
+    font-size: 14px;
+}
+
+QMainWindow, QDialog {
+    background-color: #1e1e2e;
+}
+
+QFrame {
+    border: none;
+}
+
+QPushButton {
+    background-color: #89b4fa;
+    color: #1e1e2e;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: bold;
+}
+
+QPushButton:hover {
+    background-color: #b4befe;
+}
+
+QPushButton:pressed {
+    background-color: #74c7ec;
+}
+
+QPushButton:disabled {
+    background-color: #45475a;
+    color: #6c7086;
+}
+
+QLineEdit, QTextEdit {
+    background-color: #313244;
+    border: 2px solid #45475a;
+    border-radius: 8px;
+    padding: 8px;
+    color: #cdd6f4;
+    selection-background-color: #89b4fa;
+}
+
+QLineEdit:focus, QTextEdit:focus {
+    border-color: #89b4fa;
+}
+
+QListWidget {
+    background-color: #181825;
+    border: none;
+    outline: none;
+}
+
+QListWidget::item {
+    padding: 10px;
+    border-bottom: 1px solid #313244;
+    border-radius: 4px;
+}
+
+QListWidget::item:hover {
+    background-color: #313244;
+}
+
+QListWidget::item:selected {
+    background-color: #45475a;
+    color: #ffffff;
+}
+
+QScrollBar:vertical {
+    border: none;
+    background: #1e1e2e;
+    width: 8px;
+    margin: 0px;
+}
+
+QScrollBar::handle:vertical {
+    background: #45475a;
+    border-radius: 4px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #585b70;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QLabel {
+    color: #cdd6f4;
+}
+
+QLabel#headerLabel {
+    font-size: 18px;
+    font-weight: bold;
+    color: #89b4fa;
+}
+
+QTextEdit#chatView {
+    background-color: #1e1e2e;
+    border: none;
+    outline: none;
+    selection-background-color: #89b4fa;
+}
+
+QTextEdit#chatView table {
+    border: none;
+    border-collapse: collapse;
+}
+
+QTextEdit#chatView td {
+    border: none;
+}
+
+QTextEdit#chatView p {
+    margin: 0px;
+    padding: 0px;
+}

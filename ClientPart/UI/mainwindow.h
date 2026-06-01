@@ -5,6 +5,7 @@
 #include <QListWidget>
 #include <QCompleter>
 #include <QStringListModel>
+#include <QDateTime>
 
 #include "Handler.h"
 #include "AppState.h"
@@ -47,8 +48,10 @@ private:
 
     std::unordered_map<std::string, int> searchMap;
 
-
     void appendMessageToView(const Message& msg);
     void prependMessagesToView(const std::vector<Message>& messages);
     // void loadMoreHistory();
+
+    QString formatTime(int64_t timestamp);
+    QString buildMessageHtml(const Message& msg);
 };

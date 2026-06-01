@@ -8,9 +8,20 @@
 
 #include <QApplication>
 #include <QMetaObject>
+#include "QFile"
 
 int main(int argc, char *argv[]) {
     QApplication a(argc, argv);
+
+    QFile styleFile(":/styles/style.qss");
+
+    if (styleFile.open(QFile::ReadOnly)) {
+        QString styleSheet = QLatin1String(styleFile.readAll());
+        a.setStyleSheet(styleSheet);
+    } else {
+        qWarning() << "Could not open style sheet";
+    }
+
     AppState* state = new AppState();
     MessageRouter* router = new MessageRouter();
     Handler* handler = new Handler();
