@@ -76,13 +76,6 @@ MainWindow::MainWindow(QWidget *parent, AppState* state, DialogManager* manager)
             prependMessagesToView(messages);
     });
 
-    // QScrollBar* sb = ui->chatView->verticalScrollBar();  //future
-    // connect(sb, &QScrollBar::valueChanged, this, [this, sb](int value){
-    //     if (value == sb->minimum() && selectedUserId != -1) {
-    //         loadMoreHistory();
-    //     }
-    // });
-
     connect(manager, &DialogManager::dialogsUpdated, this, &MainWindow::refreshDialogs);
 }
 
@@ -91,65 +84,71 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::refreshCurrentChat() {
+    ui->chatView->setUpdatesEnabled(false);
     ui->chatView->clear();
-    if(selectedUserId == -1) return;
 
-    std::string peerName = state_->getUsername(selectedUserId);
-
-    const auto* messages = manager_->getMessages(selectedUserId);
-    if(!messages) return;
-
-    for (const auto& msg : *messages) {
-        if(msg.senderId == selectedUserId)
-            ui->chatView->append(QString::fromStdString("[" + peerName + "] " + msg.text));
-        else
-            ui->chatView->append(QString::fromStdString("[YOU] " + msg.text));
+    if (selectedUserId == -1) {
+        ui->chatView->setUpdatesEnabled(true);
+        return;
     }
 
-    ui->chatView->verticalScrollBar()->setValue(ui->chatView->verticalScrollBar()->maximum());
+    const auto* messages = manager_->getMessages(selectedUserId);
+    if (!messages) {
+        ui->chatView->setUpdatesEnabled(true);
+        return;
+    }
+
+    QString fullHtml;
+    for (const auto& msg : *messages) {
+        fullHtml += buildMessageHtml(msg);
+    }
+
+    ui->chatView->setHtml(fullHtml);
+    ui->chatView->setUpdatesEnabled(true);
+
+    QScrollBar* sb = ui->chatView->verticalScrollBar();
+    sb->setValue(sb->maximum());
 }
 
 void MainWindow::prependMessagesToView(const std::vector<Message>& messages) {
     if(messages.empty()) return;
 
     auto* scrollbar = ui->chatView->verticalScrollBar();
-    int oldMax = scrollbar->maximum();
-    int oldValue = scrollbar->value();
-    bool wasAtBottom = (oldValue >= oldMax - 10);
+    int previousMaximum = scrollbar->maximum();
+    int previousValue = scrollbar->value();
 
-    QTextCursor cursor = ui->chatView->textCursor();
+    ui->chatView->setUpdatesEnabled(false);
+
+    QTextCursor cursor(ui->chatView->document());
     cursor.movePosition(QTextCursor::Start);
 
-    std::string peerName = state_->getUsername(selectedUserId);
-
+    QString fullHtml;
     for (auto it = messages.rbegin(); it != messages.rend(); ++it) {
-        const auto& msg = *it;
-        QString line;
-        if(msg.senderId == state_->getCurrentUserId())
-            line = QString::fromStdString("[YOU] " + msg.text);
-        else
-            line = QString::fromStdString("[" + peerName + "] " + msg.text);
-
-        cursor.insertText(line + "\n");
+        fullHtml += buildMessageHtml(*it);
     }
 
-    int newMax = scrollbar->maximum();
-    if(wasAtBottom) scrollbar->setValue(newMax);
-    else scrollbar->setValue(oldValue + newMax - oldMax);
-}
+    cursor.insertHtml(fullHtml);
+    ui->chatView->setUpdatesEnabled(true);
 
+    int delta = scrollbar->maximum() - previousMaximum;
+    scrollbar->setValue(previousValue + delta);
+}
 void MainWindow::openDialog(int id) {
     selectedUserId = id;
     ui->chatView->clear();
     ui->user->setText(QString::fromStdString(state_->getUsername(id)));
     ui->inputField->setFocus();
 
+    refreshCurrentChat();
     emit loadHistoryRequest(id, std::numeric_limits<int>::max());
 }
 
 void MainWindow::appendMessageToView(const Message& msg) {
-    QString html = QString::fromStdString((msg.senderId == state_->getCurrentUserId() ? "[YOU] " : "[" + state_->getUsername(msg.senderId) + "] ") + msg.text);
-    ui->chatView->append(html);
+    QString html = buildMessageHtml(msg);
+    QTextCursor cursor(ui->chatView->document());
+    cursor.movePosition(QTextCursor::End);
+    cursor.insertHtml(html);
+
     ui->chatView->verticalScrollBar()->setValue(ui->chatView->verticalScrollBar()->maximum());
 }
 
@@ -174,4 +173,43 @@ void MainWindow::refreshDialogs() {
             }
         }
     }
+}
+
+QString MainWindow::formatTime(int64_t timestamp) {
+    QDateTime dt = QDateTime::fromMSecsSinceEpoch(timestamp);
+    return dt.toString("HH:mm");
+}
+
+QString MainWindow::buildMessageHtml(const Message& msg) {
+    bool isMe = (msg.senderId == state_->getCurrentUserId());
+
+    QString align     = isMe ? "right" : "left";
+    QString bgColor   = isMe ? "#89b4fa" : "#313244";
+    QString textColor = isMe ? "#11111b" : "#cdd6f4";
+    QString timeColor = isMe ? "#45475a" : "#a6adc8";
+    QString timeStr   = formatTime(msg.timestamp);
+
+    QString escapedText = QString::fromStdString(msg.text).toHtmlEscaped();
+    escapedText.replace("\n", "<br>");
+
+    return QString(
+               "<table width='100%' style='margin: 4px 0px; border: none;'>"
+               "  <tr>"
+               "    <td align='%1' style='border: none; padding: 0px;'>"
+               "      <table style='background-color: %2; border-radius: 12px; margin: 0px; border: none;' cellpadding='8' cellspacing='0'>"
+               "        <tr>"
+               "          <td style='border: none; padding: 6px 10px 4px 10px; max-width: 450px;'>"
+               "            <span style='color: %3; font-size: 13px; font-family: \"Segoe UI\", sans-serif;'>%4</span>"
+               "          </td>"
+               "        </tr>"
+               "        <tr>"
+               "          <td align='right' style='border: none; padding: 0px 10px 4px 10px;'>"
+               "            <span style='color: %5; font-size: 9px; font-family: \"Segoe UI\", sans-serif;'>%6</span>"
+               "          </td>"
+               "        </tr>"
+               "      </table>"
+               "    </td>"
+               "  </tr>"
+               "</table>"
+               ).arg(align, bgColor, textColor, escapedText, timeColor, timeStr);
 }

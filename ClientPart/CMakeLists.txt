@@ -56,6 +56,8 @@ qt_add_executable(Client
 
     UI/loginwindow.ui
     UI/mainwindow.ui
+
+    resources.qrc
 )
 
 target_include_directories(Client PRIVATE
@@ -63,6 +65,7 @@ target_include_directories(Client PRIVATE
     App
     UI
     ../common
+    styles
 )
 
 target_link_libraries(Client PRIVATE
