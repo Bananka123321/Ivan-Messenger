@@ -6,6 +6,7 @@
 #include <iostream>
 #include <argon2.h>
 #include <random>
+#include <optional>
 
 #include "protocol.h"
 
@@ -22,6 +23,10 @@ public:
     AuthResult loginUser(const std::string& username, const std::string& password);
     bool bUsernameAvailable(const std::string& username);
     std::vector<User> searchUsers(const std::string& query);
+
+    void createSession(int user_id, const std::string& token);
+    std::optional<int> getUserIdByToken(const std::string& token);
+    void deleteSession(const std::string& token);
 
 private:
     std::string hashPassword(const std::string& password);

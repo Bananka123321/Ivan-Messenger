@@ -10,7 +10,6 @@ TCPClient::TCPClient(int port, MessageRouter* msgRouter) : port_(port), clientSo
 
     g_ssl_ctx = SSL_CTX_new(TLS_client_method());
     if(!g_ssl_ctx) {
-        std::cerr << "Failed to create SSL context\n";
         return;
     }
 
@@ -50,7 +49,6 @@ bool TCPClient::start() {
 bool TCPClient::setupSocket() {
     clientSocket = socket(AF_INET, SOCK_STREAM ,IPPROTO_TCP);
     if (clientSocket == -1) {
-        std::cerr << "Failed to create socket\n";
         return false;
     }
 
@@ -62,12 +60,10 @@ bool TCPClient::setupSocket() {
     serverAddr.sin_port = htons(port_);
 
     if (inet_pton(AF_INET, IPADRESS_dev.toUtf8().constData(), &serverAddr.sin_addr) <= 0) {
-        std::cerr << "Incorrect IP ADRESS\n";
         return false;
     }
 
     if (::connect(clientSocket, (sockaddr*)&serverAddr, sizeof(serverAddr)) == -1) {
-        std::cerr << "Connect failed\n";
         return false;
     }
 
@@ -75,7 +71,6 @@ bool TCPClient::setupSocket() {
     SSL_set_fd(ssl, clientSocket);
 
     if(SSL_connect(ssl) <= 0) {
-        std::cerr << "TLS connect failed\n";
         ERR_print_errors_fp(stderr);
         return false;
     }
@@ -101,8 +96,6 @@ void TCPClient::runLoop() {
         onMessage(msg);
 
     QMetaObject::invokeMethod(this, [this](){
-        std::cerr << "TCPCLIENT: Connection lost!\n";
-
         emit connectionLose();
     });
 }

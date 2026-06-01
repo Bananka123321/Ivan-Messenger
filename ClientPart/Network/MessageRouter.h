@@ -4,6 +4,7 @@
 #include <openssl/ssl.h>
 #include <QObject>
 #include <mutex>
+#include <atomic>
 
 #include "protocol.h"
 #include "PacketIO.h"
@@ -23,9 +24,11 @@ public:
     void resumeConnectionRequest(const std::string& token);
 
     void setSSL(SSL* ssl_);
+    void setReconnecting(bool value);
 
 private:
     SSL* ssl;
     std::mutex mutex;
-    void sendPacket(const std::string& msg);
+    std::atomic<bool> isReconnecting{false};
+    void sendPacket(const std::string& msg, bool force = false);
 };

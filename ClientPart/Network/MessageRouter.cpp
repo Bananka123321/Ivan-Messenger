@@ -3,7 +3,12 @@
 MessageRouter::MessageRouter() {}
 \
 void MessageRouter::setSSL(SSL* ssl_) {
+    std::lock_guard<std::mutex> lock(mutex);
     ssl = ssl_;
+}
+
+void MessageRouter::setReconnecting(bool value) {
+    isReconnecting.store(value);
 }
 
 void MessageRouter::loginRequest(const std::string& login, const std::string& password) {
@@ -43,14 +48,20 @@ void MessageRouter::ping() {
 
 void MessageRouter::resumeConnectionRequest(const std::string& token) {
     std::string request = protocol::resumeConnectionRequest(token);
-    sendPacket(request);
+    sendPacket(request, true);
 }
 
-void MessageRouter::sendPacket(const std::string& msg) {
+void MessageRouter::sendPacket(const std::string& msg, bool force) {
+    if(!force && isReconnecting.load()) {
+        return;
+    }
+
     std::lock_guard<std::mutex> lock(mutex);
-    std::cerr << "MSG: " << msg << '\n';
+    if(!force && isReconnecting.load()) {
+        return;
+    }
+
     if(!ssl) {
-        std::cerr << "SSL not exist((\n";
         return;
     }
     PacketIO::sendPacket(ssl, msg);

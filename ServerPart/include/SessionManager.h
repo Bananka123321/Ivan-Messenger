@@ -22,9 +22,5 @@ public:
 
 private:
     std::vector<std::shared_ptr<ClientSession>> sessions;
-    std::unordered_map<std::string, int> tokens;
     std::mutex mutex;
-
-    friend class Handler;
-    void addToken(const std::string& token, int user_id);
 };

@@ -47,7 +47,6 @@ void Handler::handleMessage(const std::string& msg) {
             handlers[type](j);
         else
             std::cerr << "Unknown message type " << type << std::endl;
-
     } catch (const std::exception& e) {
         std::cerr << "JSON parse ERROR " << e.what() << std::endl;
     }
