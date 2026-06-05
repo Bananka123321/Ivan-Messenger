@@ -1,5 +1,5 @@
 ## Скачать клиент
-Перейди в [Releases](/releases) скачай архив для своей ОС.
+Перейди в [Releases](./releases) скачай архив для своей ОС.
 
 ### Windows
 1. Распакуй `ChatClient_Windows.zip`
