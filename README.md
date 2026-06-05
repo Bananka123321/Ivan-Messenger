@@ -1,5 +1,5 @@
-## Скачать клиент
-Перейди в [Releases](./releases) скачай архив для своей ОС.
+[## Скачать клиент
+Перейди в [Releases](https://github.com/Bananka123321/async-TCP-server-client/releases) скачай архив для своей ОС.
 
 ### Windows
 1. Распакуй `ChatClient_Windows.zip`
@@ -13,3 +13,4 @@
 
 ### Подключение
 Клиент автоматически подключается к серверу: `31.192.108.37:6767` (TLS)
+](https://github.com/Bananka123321/async-TCP-server-client/edit/main/README.md)
