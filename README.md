@@ -1,4 +1,4 @@
-[## Скачать клиент
+## Скачать клиент
 Перейди в [Releases](https://github.com/Bananka123321/async-TCP-server-client/releases) скачай архив для своей ОС.
 
 ### Windows
