@@ -5,7 +5,7 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Test)
 
 set(CLIENT_SOURCES
     main.cpp
@@ -49,6 +49,8 @@ set(CLIENT_HEADERS
 )
 
 find_package(OpenSSL REQUIRED)
+
+add_subdirectory(tests)
 
 qt_add_executable(Client
     ${CLIENT_SOURCES}
