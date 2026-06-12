@@ -30,8 +30,10 @@
 
 ### Windows
 1. Распакуй `ChatClient_Windows.zip`
-2. Запусти `Client.exe`
-3. Готово
+2. Скачай .dll файлы(libcrypto-3-x64.dll, libssl-3-x64.dll)
+3. Перекинь в папку с приложением
+4. Запусти `Client.exe`
+5. Готово
 
 ### Linux
 1. Распакуй `ChatClient_Linux.tar.gz`
