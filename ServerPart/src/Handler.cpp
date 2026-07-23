@@ -134,16 +134,24 @@ void Handler::privateMessage(std::shared_ptr<ClientSession> client, const nlohma
         return;
     }
 
+    std::string cleanText = Validator::sanitize(j["text"].get<std::string_view>());
+    if (cleanText.empty()) {
+        dispatcher.sendTo(client, protocol::errorMessage("Message is empty after sanitization"));
+        return;
+    }
+
     int64_t timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    int msg_id = msgManager.saveMessage(client->getUserId(), j["to"], j["text"], timestamp);
+    int msg_id = msgManager.saveMessage(client->getUserId(), j["to"], cleanText, timestamp);
     
-    diaManager.insertDialog(client->getUserId(), j["to"], msg_id, j["text"], timestamp);
-    diaManager.insertDialog(j["to"], client->getUserId(), msg_id, j["text"], timestamp);
+    diaManager.insertDialog(client->getUserId(), j["to"], msg_id, cleanText, timestamp);
+    diaManager.insertDialog(j["to"], client->getUserId(), msg_id, cleanText, timestamp);
 
     auto receiver = sessionManager.getByUserId(j["to"]);
     if (!receiver) return;
 
-    receiver->send(j.dump());
+    nlohmann::json out = j;
+    out["text"] = cleanText;
+    receiver->send(out.dump());
 }
 
 void Handler::setDisconnectHandler(std::function<void(std::shared_ptr<ClientSession>)> cb) {

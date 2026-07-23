@@ -10,6 +10,7 @@
 #include "Handler.h"
 #include "AppState.h"
 #include "DialogManager.h"
+#include "Validator.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {

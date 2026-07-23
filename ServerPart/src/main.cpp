@@ -19,7 +19,6 @@ int main() {
     while(!SignalHandler::isShutdownRequested())
         pause();
 
-    std::cerr << "\nSERVER: signal shutdown received\n";
     server.stop();
 
     if(serverThread.joinable())

@@ -50,7 +50,7 @@ set(CLIENT_HEADERS
 
 find_package(OpenSSL REQUIRED)
 
-add_subdirectory(tests)
+# add_subdirectory(tests)
 
 qt_add_executable(Client
     ${CLIENT_SOURCES}

@@ -65,3 +65,99 @@ bool Validator::valid_int_field(const nlohmann::json& j, const std::string& key,
     return true;
     
 }
+
+std::string Validator::sanitize(std::string_view value) {
+    std::string result;
+    result.reserve(value.length());
+
+    size_t i = 0;
+    while (i < value.length()) {
+        unsigned char c = static_cast<unsigned char>(value[i]);
+
+        int seq_len = 0;
+        uint32_t codepoint = 0;
+
+        if (c < 0x80) {
+            seq_len = 1;
+            codepoint = c;
+        } else if ((c & 0xE0) == 0xC0) {
+            seq_len = 2;
+            codepoint = c & 0x1F;
+        } else if ((c & 0xF0) == 0xE0) {
+            seq_len = 3;
+            codepoint = c & 0x0F;
+        } else if ((c & 0xF8) == 0xF0) {
+            seq_len = 4;
+            codepoint = c & 0x07;
+        } else {
+            i++;
+            continue;
+        }
+
+        if (i + seq_len > value.length()) {
+            break;
+        }
+
+        bool valid = true;
+        for (int j = 1; j < seq_len; j++) {
+            unsigned char cont = static_cast<unsigned char>(value[i + j]);
+            if ((cont & 0xC0) != 0x80) {
+                valid = false;
+                break;
+            }
+            codepoint = (codepoint << 6) | (cont & 0x3F);
+        }
+
+        if (!valid) {
+            i++;
+            continue;
+        }
+
+        bool allowed = false;
+
+        if (codepoint >= 0x20 && codepoint <= 0x7E) {
+            allowed = true;
+        }
+
+        else if (codepoint >= 0x0400 && codepoint <= 0x04FF) {
+            allowed = true;
+        }
+
+        else if (codepoint >= 0x0500 && codepoint <= 0x052F) {
+            allowed = true;
+        }
+
+        else if (codepoint == '\n' || codepoint == '\t' || codepoint == '\r') {
+            allowed = true;
+        }
+
+        else if (codepoint >= 0x1F600 && codepoint <= 0x1F64F) {
+            allowed = true;
+        }
+        else if (codepoint >= 0x1F300 && codepoint <= 0x1F5FF) {
+            allowed = true;
+        }
+        else if (codepoint >= 0x1F680 && codepoint <= 0x1F6FF) {
+            allowed = true;
+        }
+        else if (codepoint >= 0x2600 && codepoint <= 0x26FF) {
+            allowed = true;
+        }
+        else if (codepoint >= 0x2700 && codepoint <= 0x27BF) {
+            allowed = true;
+        }
+
+        if (allowed) {
+            for (int j = 0; j < seq_len; j++) {
+                result += static_cast<char>(value[i + j]);
+            }
+        }
+
+        i += seq_len;
+    }
+
+    if (result.length() > 4096)
+        result = result.substr(0, 4096);
+
+    return result;
+}

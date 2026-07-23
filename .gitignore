@@ -1,7 +1,10 @@
-build/
+build*/
 CMakeFiles/
 CMakeCache.txt
 Makefile
 .vscode/
 config.json
 server.key
+*.user
+*.log
+CMakePresets.json
