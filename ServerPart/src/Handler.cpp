@@ -185,8 +185,8 @@ void Handler::getDialogsRequest(const std::shared_ptr<ClientSession>& client, co
     dispatcher.sendTo(client, protocol::getDialogsResponse(!metas.empty(), metas));
 }
 
-void Handler::ping(const std::shared_ptr<ClientSession> &client, const nlohmann::json& j) const {
-    sessionManager.updateActivity(client);
+void Handler::ping(const std::shared_ptr<ClientSession> &client, const nlohmann::json& j) {
+    SessionManager::updateActivity(client);
 }
 
 void Handler::resumeConnectionRequest(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j) {

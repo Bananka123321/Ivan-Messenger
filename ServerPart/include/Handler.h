@@ -37,7 +37,7 @@ private:
     void searchUserRequest(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j);
     void historyRequest(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j);
     void getDialogsRequest(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j);
-    void ping(const std::shared_ptr<ClientSession> &client, const nlohmann::json& j) const;
+    static void ping(const std::shared_ptr<ClientSession> &client, const nlohmann::json& j) ;
     void resumeConnectionRequest(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j);
     
     void authSuccess(const std::shared_ptr<ClientSession>& client, const int& id, const std::string& username);
