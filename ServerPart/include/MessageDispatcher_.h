@@ -1,11 +1,12 @@
 #pragma once
 
-#include "../include/SessionManager.h"
 #include <functional>
 
-class MessageDispatcher {
+#include "../include/SessionManager.h"
+
+class MessageDispatcher_ {
 public:
-    explicit MessageDispatcher(SessionManager& sm);
+    explicit MessageDispatcher_(SessionManager& sm);
 
     std::function<void(std::shared_ptr<ClientSession>)> onDisconnect;
 
@@ -14,5 +15,5 @@ public:
     void broadcast(const std::string& msg) const;
 
 private:
-    SessionManager& sessionManager;
+    SessionManager& sessionManager_;
 };

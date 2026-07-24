@@ -5,11 +5,12 @@
 
 class SignalHandler {
 public:
-    static void Setup();
-    static bool isShutdownRequested();
+    static void s_Setup();
+    static bool s_isShutdownRequested();
 
 private:
-    static std::atomic<bool> shutdown_requested;
+    static std::atomic<bool> shutdown_requested_;
 
+private:
     static void handleSignal(int s);
 };

@@ -10,7 +10,7 @@
 
 #include "protocol.h"
 
-class UserManager {
+class DB_UserManager {
     struct AuthResult {
         bool success;
         int user_id;
@@ -18,7 +18,8 @@ class UserManager {
     };
 
 public:
-    explicit UserManager(const std::string& conn_str) : conn(conn_str) {}
+    explicit DB_UserManager(const std::string& conn_str) : conn_(conn_str) {}
+
     AuthResult registerUser(const std::string& username, const std::string& password);
     AuthResult loginUser(const std::string& username, const std::string& password);
     bool bUsernameAvailable(const std::string& username);
@@ -30,5 +31,7 @@ public:
 
 private:
     static std::string hashPassword(const std::string& password);
-    pqxx::connection conn;
+
+private:
+    pqxx::connection conn_;
 };

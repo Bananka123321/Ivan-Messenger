@@ -9,3 +9,4 @@ server.key
 *.log
 CMakePresets.json
 .idea
+cmake-build-debug/

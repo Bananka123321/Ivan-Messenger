@@ -1,8 +1,8 @@
 #include "../include/DB_UserManager.h"
 
-bool UserManager::bUsernameAvailable(const std::string& username) {
+bool DB_UserManager::bUsernameAvailable(const std::string& username) {
     try {
-        pqxx::work txn(conn);
+        pqxx::work txn(conn_);
         const pqxx::result r = txn.exec("SELECT id FROM users WHERE username = " + txn.quote(username));
         return r.empty();
     } catch(const std::exception& e) {
@@ -11,13 +11,13 @@ bool UserManager::bUsernameAvailable(const std::string& username) {
     }
 }
 
-UserManager::AuthResult UserManager::registerUser(const std::string& username, const std::string& password) {
+DB_UserManager::AuthResult DB_UserManager::registerUser(const std::string& username, const std::string& password) {
     if (!bUsernameAvailable(username))
         return {.success = false, .user_id = -1, .error = "Username is already taken"};
 
     const std::string hashed = hashPassword(password);
     try {
-        pqxx::work txn(conn);
+        pqxx::work txn(conn_);
         const pqxx::result r = txn.exec("INSERT INTO users(username, password_hash) VALUES (" + txn.quote(username) + ", " + txn.quote(hashed) + ") RETURNING id");
         txn.commit();
         return {.success = true, .user_id = r[0]["id"].as<int>(), .error = ""};
@@ -27,9 +27,9 @@ UserManager::AuthResult UserManager::registerUser(const std::string& username, c
     }
 }
 
-UserManager::AuthResult UserManager::loginUser(const std::string& username, const std::string& password) {
+DB_UserManager::AuthResult DB_UserManager::loginUser(const std::string& username, const std::string& password) {
     try {
-        pqxx::work txn(conn);
+        pqxx::work txn(conn_);
         const pqxx::result r = txn.exec("SELECT id, password_hash FROM users WHERE username = " + txn.quote(username));
         if (r.empty()) return {.success = false, .user_id = -1, .error = "User not found"};
 
@@ -45,7 +45,7 @@ UserManager::AuthResult UserManager::loginUser(const std::string& username, cons
     }
 }
 
-std::string UserManager::hashPassword(const std::string& password) {
+std::string DB_UserManager::hashPassword(const std::string& password) {
     char salt[16];
 
     std::random_device rd;
@@ -67,10 +67,10 @@ std::string UserManager::hashPassword(const std::string& password) {
     }
 }
 
-std::vector<User> UserManager::searchUsers(const std::string& query) {
+std::vector<User> DB_UserManager::searchUsers(const std::string& query) {
     try {
         std::vector<User> result;
-        pqxx::work txn(conn);
+        pqxx::work txn(conn_);
 
         for (const pqxx::result r = txn.exec("SELECT id, username FROM users WHERE username LIKE " + txn.quote(query + "%") + " LIMIT 20"); const auto& row : r)
             result.push_back({.user_id = row["id"].as<int>(), .username = row["username"].c_str()});
@@ -83,9 +83,9 @@ std::vector<User> UserManager::searchUsers(const std::string& query) {
     }
 }
 
-void UserManager::createSession(int user_id, const std::string& token) {
+void DB_UserManager::createSession(int user_id, const std::string& token) {
     try {
-        pqxx::work txn(conn);
+        pqxx::work txn(conn_);
         txn.exec("INSERT INTO user_sessions (user_id, token) VALUES($1, $2)", pqxx::params(user_id, token));
         txn.commit();
     } catch(const std::exception& e) {
@@ -93,9 +93,9 @@ void UserManager::createSession(int user_id, const std::string& token) {
     }
 }
 
-std::optional<int> UserManager::getUserIdByToken(const std::string& token) {
+std::optional<int> DB_UserManager::getUserIdByToken(const std::string& token) {
     try {
-        pqxx::work txn(conn);
+        pqxx::work txn(conn_);
         const auto res = txn.exec("SELECT user_id FROM user_sessions WHERE token = $1", pqxx::params(token));
         if(res.empty()) return std::nullopt;
         return res[0]["user_id"].as<int>();
@@ -105,9 +105,9 @@ std::optional<int> UserManager::getUserIdByToken(const std::string& token) {
     }   
 }
 
-void UserManager::deleteSession(const std::string& token) {
+void DB_UserManager::deleteSession(const std::string& token) {
     try {
-        pqxx::work txn(conn);
+        pqxx::work txn(conn_);
         txn.exec("DELETE FROM user_sessions WHERE token = $1", pqxx::params(token));
         txn.commit();
     } catch (const std::exception& e) {

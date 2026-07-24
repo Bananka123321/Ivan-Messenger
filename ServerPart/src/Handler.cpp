@@ -1,47 +1,45 @@
 #include "../include/Handler.h"
 
-Handler::Handler(SessionManager& sm) : sessionManager(sm), dispatcher(sessionManager), userManager(Config::getDB().getConnectionStr()), msgManager(Config::getDB().getConnectionStr()), diaManager(Config::getDB().getConnectionStr()) {
-    handlers["loginRequest"] = [this](const std::shared_ptr<ClientSession>& client, const nlohmann::json& j) {
+Handler::Handler(SessionManager& sm) : userManager_(Config::getDB().getConnectionStr()), messageManager_(Config::getDB().getConnectionStr()), dialogManager_(Config::getDB().getConnectionStr()), sessionManager_(sm), dispatcher_(sessionManager_) {
+    handlers_["loginRequest"] = [this](const auto& client, const auto& j) {
         loginRequest(client, j);
     };
 
-    handlers["registerRequest"] = [this](const std::shared_ptr<ClientSession>& client, const nlohmann::json& j) {
+    handlers_["registerRequest"] = [this](const auto& client, const auto& j) {
         registerRequest(client, j);
     };
 
-    handlers["privateMessage"] = [this](const std::shared_ptr<ClientSession>& client, const nlohmann::json& j) {
+    handlers_["privateMessage"] = [this](const auto& client, const auto& j) {
         privateMessage(client, j);
     };
 
-    handlers["searchUserRequest"] = [this](const std::shared_ptr<ClientSession>& client, const nlohmann::json& j) {
+    handlers_["searchUserRequest"] = [this](const auto& client, const auto& j) {
         searchUserRequest(client, j);
     };
 
-    handlers["historyRequest"] = [this](const std::shared_ptr<ClientSession>& client, const nlohmann::json& j) {
+    handlers_["historyRequest"] = [this](const auto& client, const auto& j) {
         historyRequest(client, j);
     };
 
-    handlers["getDialogsRequest"] = [this](const std::shared_ptr<ClientSession>& client, const nlohmann::json& j) {
+    handlers_["getDialogsRequest"] = [this](const auto& client, const auto& j) {
         getDialogsRequest(client, j);
     };
 
-    handlers["ping"] = [this](const std::shared_ptr<ClientSession>& client, const nlohmann::json& j) {
+    handlers_["ping"] = [this](const auto& client, const auto& j) {
         ping(client, j);
     };
 
-    handlers["resumeConnectionRequest"] = [this](const std::shared_ptr<ClientSession>& client, const nlohmann::json& j) {
+    handlers_["resumeConnectionRequest"] = [this](const auto& client, const auto& j) {
         resumeConnectionRequest(client, j);
     };
 }
 
-Handler::~Handler() = default;
-
-void Handler::handleMessage(const std::shared_ptr<ClientSession>& client, std::string& msg) {
+void Handler::handleMessage(const std::shared_ptr<ClientSession>& client, std::string_view msg) {
     try {
         auto j = nlohmann::json::parse(msg);
-        sessionManager.updateActivity(client);
-        if (const std::string type = j["type"]; handlers.contains(type)) {
-            handlers[type](client, j);
+        SessionManager::updateActivity(client);
+        if (const std::string type = j["type"]; handlers_.contains(type)) {
+            handlers_[type](client, j);
         }
         else
             std::cerr << "Unknown message type " << type << std::endl;    
@@ -77,13 +75,13 @@ std::string Handler::generateToken() {
 
 void Handler::loginRequest(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j) {
     if(std::string error; !Validator::valid_string_field(j, "username", Validator::username, error) || !Validator::valid_string_field(j, "password", Validator::password, error)) {
-        dispatcher.sendTo(client, protocol::loginResponse(false, -1, "", error));
+        dispatcher_.sendTo(client, protocol::loginResponse(false, -1, "", error));
         return;
     }
 
-    auto [success, user_id, error] = userManager.loginUser(j["username"], j["password"]);
+    auto [success, user_id, error] = userManager_.loginUser(j["username"], j["password"]);
     if (!success) {
-        dispatcher.sendTo(client, protocol::loginResponse(success, user_id, j["username"], "", error));
+        dispatcher_.sendTo(client, protocol::loginResponse(success, user_id, j["username"], "", error));
         return;
     }
 
@@ -92,58 +90,58 @@ void Handler::loginRequest(const std::shared_ptr<ClientSession>& client, const n
 
 void Handler::registerRequest(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j) {
     if(std::string error; !Validator::valid_string_field(j, "username", Validator::username, error) || !Validator::valid_string_field(j, "password", Validator::password, error)) {
-        dispatcher.sendTo(client, protocol::registerResponse(false, -1, "", error));
+        dispatcher_.sendTo(client, protocol::registerResponse(false, -1, "", error));
         return;
     }
     
-    auto [success, user_id, error] = userManager.registerUser(j["username"],j["password"]);
+    auto [success, user_id, error] = userManager_.registerUser(j["username"],j["password"]);
     if (!success) {
-        dispatcher.sendTo(client, protocol::loginResponse(success, user_id, j["username"], "", error));
+        dispatcher_.sendTo(client, protocol::loginResponse(success, user_id, j["username"], "", error));
         return;
     }
 
     authSuccess(client, user_id, j["username"]);
 }
 
-void Handler::authSuccess(const std::shared_ptr<ClientSession>& client, const int& id, const std::string& username) {
+void Handler::authSuccess(const std::shared_ptr<ClientSession>& client, int id, const std::string& username) {
     client->setUser(id, username);
-    client->set_is_authentificated(true);
+    client->set_is_authenticated(true);
     const std::string token = generateToken();
-    userManager.createSession(id, token);
-    dispatcher.sendTo(client, protocol::loginResponse(true, id, username, token, ""));
-    sessionManager.add(client);
+    userManager_.createSession(id, token);
+    dispatcher_.sendTo(client, protocol::loginResponse(true, id, username, token, ""));
+    sessionManager_.add(client);
 }
 
 void Handler::privateMessage(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j) {
-    if (!client->get_is_authentificate()) {
+    if (!client->get_is_authenticated()) {
         std::cerr << "SORRY, not auth\n";
         return;
     }
     
     std::string error;
     if(!Validator::valid_string_field(j, "text", Validator::message, error)) {
-        dispatcher.sendTo(client, protocol::errorMessage(error));
+        dispatcher_.sendTo(client, protocol::errorMessage(error));
         return;
     }
 
     if(!Validator::valid_int_field(j, "to", 1, std::numeric_limits<long int>::max(), error)) {
-        dispatcher.sendTo(client, protocol::errorMessage(error));
+        dispatcher_.sendTo(client, protocol::errorMessage(error));
         return;
     }
 
     std::string cleanText = Validator::sanitize(j["text"].get<std::string_view>());
     if (cleanText.empty()) {
-        dispatcher.sendTo(client, protocol::errorMessage("Message is empty after sanitization"));
+        dispatcher_.sendTo(client, protocol::errorMessage("Message is empty after sanitization"));
         return;
     }
 
     const int64_t timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    const int msg_id = msgManager.saveMessage(client->getUserId(), j["to"], cleanText, timestamp);
+    const int msg_id = messageManager_.saveMessage(client->getUserId(), j["to"], cleanText, timestamp);
     
-    diaManager.insertDialog(client->getUserId(), j["to"], msg_id, cleanText, timestamp);
-    diaManager.insertDialog(j["to"], client->getUserId(), msg_id, cleanText, timestamp);
+    dialogManager_.insertDialog(client->getUserId(), j["to"], msg_id, cleanText, timestamp);
+    dialogManager_.insertDialog(j["to"], client->getUserId(), msg_id, cleanText, timestamp);
 
-    const auto receiver = sessionManager.getByUserId(j["to"]);
+    const auto receiver = sessionManager_.getByUserId(j["to"]);
     if (!receiver) return;
 
     nlohmann::json out = j;
@@ -154,35 +152,35 @@ void Handler::privateMessage(const std::shared_ptr<ClientSession>& client, const
 }
 
 void Handler::setDisconnectHandler(const std::function<void(std::shared_ptr<ClientSession>)> &cb) {
-    dispatcher.onDisconnect = cb;
+    dispatcher_.onDisconnect = cb;
 }
 
 void Handler::searchUserRequest(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j) {
     if(std::string error; !Validator::valid_string_field(j, "username", Validator::search, error)) {
-        dispatcher.sendTo(client, protocol::errorMessage(error));
+        dispatcher_.sendTo(client, protocol::errorMessage(error));
         return;
     }
 
-    const auto users = userManager.searchUsers(j["username"]);
+    const auto users = userManager_.searchUsers(j["username"]);
 
-    dispatcher.sendTo(client, protocol::searchUserResponse(users));
+    dispatcher_.sendTo(client, protocol::searchUserResponse(users));
 }
 
 void Handler::historyRequest(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j) {
-    if(!client->get_is_authentificate()) return;
-    const auto history = msgManager.getHistory(client->getUserId(), j["peer_id"], j["last_msg_id"], j["limit"]);
-    dispatcher.sendTo(client, protocol::historyResponse(!history.empty(), j["peer_id"], history));
+    if(!client->get_is_authenticated()) return;
+    const auto history = messageManager_.getHistory(client->getUserId(), j["peer_id"], j["last_msg_id"], j["limit"]);
+    dispatcher_.sendTo(client, protocol::historyResponse(!history.empty(), j["peer_id"], history));
 }
 
 void Handler::getDialogsRequest(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j) {
-    if(!client->get_is_authentificate()) return;
+    if(!client->get_is_authenticated()) return;
 
-    const auto dialogs = diaManager.getUserDialogs(client->getUserId());
+    const auto dialogs = dialogManager_.getUserDialogs(client->getUserId());
     std::vector<MetaDialog> metas;
     for (const auto&[peer_id, username, last_msg_text, last_msg_timestamp, last_activity_time] : dialogs)
         metas.push_back({.peer_id = peer_id, .username = username, .last_msg_text = last_msg_text, .last_msg_timestamp = last_msg_timestamp, .last_activity_time = last_activity_time});
 
-    dispatcher.sendTo(client, protocol::getDialogsResponse(!metas.empty(), metas));
+    dispatcher_.sendTo(client, protocol::getDialogsResponse(!metas.empty(), metas));
 }
 
 void Handler::ping(const std::shared_ptr<ClientSession> &client, const nlohmann::json& j) {
@@ -193,19 +191,19 @@ void Handler::resumeConnectionRequest(const std::shared_ptr<ClientSession>& clie
     const std::string token = j.value("token", "");
     if (token.empty()) {
         std::cerr << "token empty\n";
-        dispatcher.sendTo(client, protocol::resumeConnectionResponse(false));
+        dispatcher_.sendTo(client, protocol::resumeConnectionResponse(false));
         return;
     }
 
-    const auto user_id = userManager.getUserIdByToken(token);
+    const auto user_id = userManager_.getUserIdByToken(token);
     if(!user_id.has_value()) {
-        dispatcher.sendTo(client, protocol::resumeConnectionResponse(false));
+        dispatcher_.sendTo(client, protocol::resumeConnectionResponse(false));
         return;
     }
 
     const int id = user_id.value();
-    client->setUser(id, "hz");
-    client->set_is_authentificated(true);
-    sessionManager.add(client);
-    dispatcher.sendTo(client, protocol::resumeConnectionResponse(true));
+    client->setUser(id, "");
+    client->set_is_authenticated(true);
+    sessionManager_.add(client);
+    dispatcher_.sendTo(client, protocol::resumeConnectionResponse(true));
 }

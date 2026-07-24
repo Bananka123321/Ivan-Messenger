@@ -15,5 +15,5 @@ public:
     std::vector<MetaDialog> getUserDialogs(int user_id);
 
 private:
-    pqxx::connection conn;
+    pqxx::connection conn_;
 };

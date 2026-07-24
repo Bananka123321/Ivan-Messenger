@@ -1,12 +1,12 @@
 #include "../include/SignalHandler.h"
 
-std::atomic<bool> SignalHandler::shutdown_requested{false};
+std::atomic<bool> SignalHandler::shutdown_requested_{false};
 
 void SignalHandler::handleSignal(int s) {
-    shutdown_requested.store(true, std::memory_order_release);
+    shutdown_requested_.store(true, std::memory_order_release);
 }
 
-void SignalHandler::Setup() {
+void SignalHandler::s_Setup() {
     struct sigaction sigHandler{};
 
     sigHandler.sa_handler = handleSignal;
@@ -17,6 +17,6 @@ void SignalHandler::Setup() {
     sigaction(SIGTERM, &sigHandler, nullptr);
 }
 
-bool SignalHandler::isShutdownRequested() {
-    return shutdown_requested.load(std::memory_order_acquire);
+bool SignalHandler::s_isShutdownRequested() {
+    return shutdown_requested_.load(std::memory_order_acquire);
 }

@@ -1,22 +1,22 @@
-#include "../include/TCPServer.h"
+#include "../include/TcpServer.h"
 #include "../include/SignalHandler.h"
 
 int main() {
-    SignalHandler::Setup();
+    SignalHandler::s_Setup();
 
     if(const auto error = Config::load("config.json")){
         std::cerr << "Failed to load config: " << *error << '\n';
         return 1;
     }
 
-    TCPServer server(Config::getServer().port);
+    TcpServer server(Config::getServer().port);
 
     std::thread serverThread([&server](){
         if (!server.start())
             std::cerr << "Server failed to start\n";
     });
 
-    while(!SignalHandler::isShutdownRequested())
+    while(!SignalHandler::s_isShutdownRequested())
         pause();
 
     server.stop();
