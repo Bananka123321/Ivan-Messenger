@@ -18,7 +18,7 @@ class UserManager {
     };
 
 public:
-    UserManager(const std::string& conn_str) : conn(conn_str) {}
+    explicit UserManager(const std::string& conn_str) : conn(conn_str) {}
     AuthResult registerUser(const std::string& username, const std::string& password);
     AuthResult loginUser(const std::string& username, const std::string& password);
     bool bUsernameAvailable(const std::string& username);
@@ -29,6 +29,6 @@ public:
     void deleteSession(const std::string& token);
 
 private:
-    std::string hashPassword(const std::string& password);
+    static std::string hashPassword(const std::string& password);
     pqxx::connection conn;
 };

@@ -1,14 +1,14 @@
 #include "../include/SessionManager.h"
 
-void SessionManager::add(std::shared_ptr<ClientSession> client){
+void SessionManager::add(const std::shared_ptr<ClientSession>& client){
     std::lock_guard<std::mutex> lock(mutex);
     sessions.push_back(client);
 }
 
-void SessionManager::remove(std::shared_ptr<ClientSession> client) {
+void SessionManager::remove(const std::shared_ptr<ClientSession>& client) {
     std::lock_guard<std::mutex> lock(mutex);
     
-    sessions.erase(std::remove(sessions.begin(), sessions.end(), client), sessions.end());
+    std::erase(sessions, client);
 }
 
 std::shared_ptr<ClientSession> SessionManager::getByUserId(const int& user_id) {
@@ -23,7 +23,7 @@ std::vector<std::shared_ptr<ClientSession>> SessionManager::getAll() {
     return sessions;
 }
 
-void SessionManager::updateActivity(std::shared_ptr<ClientSession> client) {
-    int64_t now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+void SessionManager::updateActivity(const std::shared_ptr<ClientSession>& client) {
+    const int64_t now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     client->setLastActivity(now);
 }

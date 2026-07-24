@@ -1,6 +1,11 @@
 #include "../include/ClientSession.h"
 
-ClientSession::ClientSession(int sock, SSL* ssl_) : socket(sock), ssl(ssl_), isAuthentificated(false), last_activity_time(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count()) {}
+ClientSession::ClientSession(const int sock, SSL* ssl_) : socket(sock), user_id(0), ssl(ssl_), isAuthentificated(false),
+                                                    last_activity_time(
+                                                        std::chrono::duration_cast<std::chrono::milliseconds>(
+                                                            std::chrono::system_clock::now().time_since_epoch()).
+                                                        count()) {
+}
 
 ClientSession::~ClientSession() {
     if (ssl) {
@@ -10,7 +15,7 @@ ClientSession::~ClientSession() {
     }
 }
 
-const int ClientSession::getSocket() const {
+int ClientSession::getSocket() const {
     return socket;
 }
 
@@ -22,11 +27,11 @@ const int& ClientSession::getUserId() const {
     return user_id;
 }
 
-bool ClientSession::send(const std::string& message) {
+bool ClientSession::send(const std::string& message) const {
     return PacketIO::sendPacket(ssl, message);
 }   
 
-bool ClientSession::receive(std::string& message) {
+bool ClientSession::receive(std::string& message) const {
     return PacketIO::recvPacket(ssl, message);
 }
 
@@ -35,11 +40,11 @@ void ClientSession::setUser(const int& new_id, const std::string& new_username) 
     user_id = new_id;
 }
 
-bool ClientSession::getIsAuthentificated() const {
+bool ClientSession::get_is_authentificate() const {
     return isAuthentificated;
 }
 
-void ClientSession::setIsAuthentificated(bool value) {
+void ClientSession::set_is_authentificated(const bool value) {
     isAuthentificated = value;
 }
 

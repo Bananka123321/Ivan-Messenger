@@ -5,13 +5,13 @@
 
 class MessageDispatcher {
 public:
-    MessageDispatcher(SessionManager& sm);
+    explicit MessageDispatcher(SessionManager& sm);
 
     std::function<void(std::shared_ptr<ClientSession>)> onDisconnect;
 
-    void sendTo(std::shared_ptr<ClientSession> client, const std::string& msg);
+    void sendTo(const std::shared_ptr<ClientSession>& client, const std::string& msg) const;
 
-    void broadcast(const std::string& msg);
+    void broadcast(const std::string& msg) const;
 
 private:
     SessionManager& sessionManager;

@@ -11,13 +11,13 @@
 
 class SessionManager {
 public:
-    void add(std::shared_ptr<ClientSession> client);
-    void remove(std::shared_ptr<ClientSession> client);
+    void add(const std::shared_ptr<ClientSession>& client);
+    void remove(const std::shared_ptr<ClientSession>& client);
 
     std::shared_ptr<ClientSession> getByUserId(const int& user_id);
     std::vector<std::shared_ptr<ClientSession>> getAll();
 
-    void updateActivity(std::shared_ptr<ClientSession> client);
+    static void updateActivity(const std::shared_ptr<ClientSession>& client);
     std::optional<int> checkToken(const std::string& token);
 
 private:

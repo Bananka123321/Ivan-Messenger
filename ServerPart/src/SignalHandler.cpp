@@ -7,14 +7,14 @@ void SignalHandler::handleSignal(int s) {
 }
 
 void SignalHandler::Setup() {
-    struct sigaction sigHandler;
+    struct sigaction sigHandler{};
 
     sigHandler.sa_handler = handleSignal;
     sigemptyset(&sigHandler.sa_mask);
     sigHandler.sa_flags = 0;
 
-    sigaction(SIGINT, &sigHandler, NULL);
-    sigaction(SIGTERM, &sigHandler, NULL);
+    sigaction(SIGINT, &sigHandler, nullptr);
+    sigaction(SIGTERM, &sigHandler, nullptr);
 }
 
 bool SignalHandler::isShutdownRequested() {

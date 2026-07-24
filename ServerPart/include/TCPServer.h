@@ -18,7 +18,7 @@ static int64_t SESSION_TIMEOUT_MS = 90000;
 
 class TCPServer {
 public:
-    TCPServer(int port);
+    explicit TCPServer(int port);
     ~TCPServer();
 
     bool start();
@@ -40,8 +40,8 @@ private:
 
     bool setupSocket();
     void run();
-    void clientDisconnect(std::shared_ptr<ClientSession> client);
-    void handleClient(std::shared_ptr<ClientSession> client);
+    void clientDisconnect(const std::shared_ptr<ClientSession>& client);
+    void handleClient(const std::shared_ptr<ClientSession>& client);
 
     void startClientMonitoring();
 };

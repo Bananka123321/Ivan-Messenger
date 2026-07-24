@@ -8,3 +8,4 @@ server.key
 *.user
 *.log
 CMakePresets.json
+.idea
