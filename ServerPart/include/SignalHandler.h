@@ -1,6 +1,6 @@
 #pragma once
 
-#include <signal.h>
+#include <csignal>
 #include <atomic>
 
 class SignalHandler {

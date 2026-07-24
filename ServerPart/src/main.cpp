@@ -4,8 +4,8 @@
 int main() {
     SignalHandler::Setup();
 
-    if(auto error = Config::load("config.json")){
-        std::cerr << "Failed to laod config: " << *error << '\n';
+    if(const auto error = Config::load("config.json")){
+        std::cerr << "Failed to load config: " << *error << '\n';
         return 1;
     }
 

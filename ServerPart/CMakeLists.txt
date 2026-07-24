@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 project(Server)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -15,13 +18,14 @@ set(SERVER_SOURCES
     src/DB_MessageManager.cpp
     src/DB_DialogManager.cpp
     src/SignalHandler.cpp
-    
+
     ../common/Validator.cpp
     ../common/PacketIO.cpp
 )
 
-find_library(ARGON2_LIB argon2 REQUIRED)
+find_package(PkgConfig REQUIRED)
 find_package(OpenSSL REQUIRED)
+pkg_check_modules(ARGON2 REQUIRED libargon2)
 
 option(ENABLE_ASAN "Enable AddressSanitizer" OFF)
 if(ENABLE_ASAN)
@@ -53,6 +57,6 @@ target_include_directories(Server PRIVATE
 
 target_link_libraries(Server PRIVATE
     pqxx pq crypto pthread
-    ${ARGON2_LIB}
+    ${ARGON2_LIBRARIES}
     OpenSSL::SSL
 )

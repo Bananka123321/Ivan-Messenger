@@ -12,7 +12,7 @@ struct DBConfig {
     int port;
     int timeout;
 
-    std::string getConnectionStr() const;
+    [[nodiscard]] std::string getConnectionStr() const;
 };
 
 struct ServerConfig {

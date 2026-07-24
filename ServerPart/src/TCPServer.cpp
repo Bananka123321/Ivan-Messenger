@@ -1,7 +1,7 @@
 #include "../include/TCPServer.h"
 
-TCPServer::TCPServer(int port) : port(port), serverSocket(-1), sessionManager(), handler(sessionManager) {
-    handler.setDisconnectHandler([this](std::shared_ptr<ClientSession> client) {
+TCPServer::TCPServer(const int port) : port(port), serverSocket(-1), sessionManager(), handler(sessionManager) {
+    handler.setDisconnectHandler([this](const std::shared_ptr<ClientSession> &client) {
         clientDisconnect(client);
     });
 
@@ -69,8 +69,8 @@ bool TCPServer::setupSocket() {
         return false;
     }
 
-    int opt = 1;
-    if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) { //Forced sestart server
+    constexpr int opt = 1;
+    if (setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) { //Forced restart server
         std::cerr << "setsockopt failed\n";
     }
 
@@ -79,7 +79,7 @@ bool TCPServer::setupSocket() {
     serverAddr.sin_port = htons(port);
     serverAddr.sin_addr.s_addr = INADDR_ANY;
 
-    if (bind(serverSocket, (sockaddr*)&serverAddr, sizeof(serverAddr)) == -1) {
+    if (bind(serverSocket, reinterpret_cast<sockaddr *>(&serverAddr), sizeof(serverAddr)) == -1) {
         std::cerr << "Bind failed\n";
         return false;
     }
@@ -98,14 +98,14 @@ void TCPServer::run() {
     sockaddr_in clientAddr{};
     socklen_t addrLen = sizeof(clientAddr); 
     while (serverRunning.load()) {
-        int clientSocket = accept(serverSocket, (sockaddr*)&clientAddr, (socklen_t*)&addrLen);
+        int clientSocket = accept(serverSocket, reinterpret_cast<sockaddr *>(&clientAddr), (socklen_t*)&addrLen);
         if (clientSocket == -1) continue;
 
         SSL* ssl = SSL_new(g_ssl_ctx);
         SSL_set_fd(ssl, clientSocket);
 
         if (SSL_accept(ssl) <= 0) {
-            std::cerr << "TLS Hanshake failed\n";
+            std::cerr << "TLS Handshake failed\n";
             ERR_print_errors_fp(stderr);
             SSL_free(ssl);
             close(clientSocket);
@@ -117,10 +117,10 @@ void TCPServer::run() {
         
         std::thread(&TCPServer::handleClient, this, client).detach();
     }
-    std::cerr << "!!!SERVER STOPED!!!\n";
+    std::cerr << "!!!SERVER STOPPED!!!\n";
 }
 
-void TCPServer::handleClient(std::shared_ptr<ClientSession> client) {
+void TCPServer::handleClient(const std::shared_ptr<ClientSession>& client) {
     try {
         std::string msg;
         client->setConnected(true);
@@ -133,7 +133,7 @@ void TCPServer::handleClient(std::shared_ptr<ClientSession> client) {
     }
 }
 
-void TCPServer::clientDisconnect(std::shared_ptr<ClientSession> client) {
+void TCPServer::clientDisconnect(const std::shared_ptr<ClientSession>& client) {
     if(!client->getConnected()) return;
 
     client->setConnected(false);

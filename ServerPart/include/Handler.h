@@ -16,11 +16,11 @@
 
 class Handler {
 public:
-    Handler(SessionManager& sm);
+    explicit Handler(SessionManager& sm);
     ~Handler();
 
-    void handleMessage(std::shared_ptr<ClientSession> client, std::string& msg);
-    void setDisconnectHandler(std::function<void(std::shared_ptr<ClientSession>)> cb);
+    void handleMessage(const std::shared_ptr<ClientSession>& client, std::string& msg);
+    void setDisconnectHandler(const std::function<void(std::shared_ptr<ClientSession>)> &cb);
     
 private:
     UserManager userManager;
@@ -31,16 +31,16 @@ private:
 
     std::unordered_map<std::string, std::function<void(std::shared_ptr<ClientSession>, const nlohmann::json&)>> handlers;
 
-    void loginRequest(std::shared_ptr<ClientSession> client, const nlohmann::json& j);
-    void registerRequest(std::shared_ptr<ClientSession> client, const nlohmann::json& j);
-    void privateMessage(std::shared_ptr<ClientSession> client, const nlohmann::json& j);
-    void searchUserRequest(std::shared_ptr<ClientSession> client, const nlohmann::json& j);
-    void historyRequest(std::shared_ptr<ClientSession> client, const nlohmann::json& j);
-    void getDialogsRequest(std::shared_ptr<ClientSession> client, const nlohmann::json& j);
-    void ping(std::shared_ptr<ClientSession> client, const nlohmann::json& j);
-    void resumeConnectionRequest(std::shared_ptr<ClientSession> client, const nlohmann::json& j);
+    void loginRequest(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j);
+    void registerRequest(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j);
+    void privateMessage(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j);
+    void searchUserRequest(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j);
+    void historyRequest(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j);
+    void getDialogsRequest(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j);
+    void ping(const std::shared_ptr<ClientSession> &client, const nlohmann::json& j) const;
+    void resumeConnectionRequest(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j);
     
-    void authSuccess(std::shared_ptr<ClientSession> client, const int& id, const std::string& username);
+    void authSuccess(const std::shared_ptr<ClientSession>& client, const int& id, const std::string& username);
 
-    std::string generateToken();
+    static std::string generateToken();
 };
