@@ -3,8 +3,6 @@
 #include <memory>
 #include <mutex>
 #include <vector>
-#include <algorithm>
-#include <unordered_map>
 #include <optional>
 
 #include "ClientSession.h"
@@ -21,6 +19,6 @@ public:
     std::optional<int> checkToken(const std::string& token);
 
 private:
-    std::vector<std::shared_ptr<ClientSession>> sessions;
-    std::mutex mutex;
+    std::vector<std::shared_ptr<ClientSession>> sessions_;
+    std::mutex mutex_;
 };

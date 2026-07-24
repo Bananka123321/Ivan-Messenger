@@ -8,12 +8,12 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(SERVER_SOURCES
     src/main.cpp
-    src/TCPServer.cpp
+        src/TcpServer.cpp
     src/DB_UserManager.cpp
     src/ClientSession.cpp
     src/Handler.cpp
     src/SessionManager.cpp
-    src/MessageDispatcher.cpp
+        src/MessageDispatcher_.cpp
     src/Config.cpp
     src/DB_MessageManager.cpp
     src/DB_DialogManager.cpp
