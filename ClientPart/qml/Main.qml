@@ -68,8 +68,9 @@ ApplicationWindow {
     Connections {
         target: appController
         function onResumeSessionFinished(success) {
-            if (!success && shouldShowLogin) {
-                showLogin();
+            if (!success) {
+                if (!shouldShowLogin)
+                    showLogin();
                 appState.clearSession();
             } else if (success && !shouldShowLogin) {
                 if (authStackView.currentItem === loginScreenComponent) {
