@@ -3,12 +3,14 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <supports-screens android:anyDensity="true" android:largeScreens="true" android:normalScreens="true" android:smallScreens="true"/>
     <application android:allowBackup="true" android:enableOnBackInvokedCallback="false" android:fullBackupOnly="false" android:hardwareAccelerated="true" android:icon="-- %%INSERT_APP_ICON%% --" android:label="-- %%INSERT_APP_NAME%% --" android:name="org.qtproject.qt.android.bindings.QtApplication" android:usesCleartextTraffic="true">
-        <service android:exported="false" android:foregroundServiceType="dataSync" android:name="org.qtproject.example.BackgroundService"/>
+        <service android:exported="false" android:foregroundServiceType="specialUse" android:name="org.qtproject.example.BackgroundService">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="Persistent connection to the messenger server for instant message delivery"/>
+        </service>
         <activity android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|layoutDirection|locale|fontScale|keyboard|keyboardHidden|navigation|mcc|mnc|density" android:exported="true" android:label="-- %%INSERT_APP_NAME%% --" android:launchMode="singleTop" android:name="org.qtproject.qt.android.bindings.QtActivity" android:screenOrientation="unspecified">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -16,6 +18,7 @@
             </intent-filter>
             <meta-data android:name="android.app.lib_name" android:value="-- %%INSERT_APP_LIB_NAME%% --"/>
             <meta-data android:name="android.app.arguments" android:value="-- %%INSERT_APP_ARGUMENTS%% --"/>
+            <meta-data android:name="android.app.background_running" android:value="true"/>
         </activity>
         <provider android:authorities="${applicationId}.qtprovider" android:exported="false" android:grantUriPermissions="true" android:name="androidx.core.content.FileProvider">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/qtprovider_paths"/>
