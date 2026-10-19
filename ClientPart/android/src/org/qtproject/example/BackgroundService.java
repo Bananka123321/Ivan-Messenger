@@ -5,11 +5,13 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Intent;
+import android.content.pm.ServiceInfo;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.util.Log;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.ServiceCompat;
 
 public class BackgroundService extends Service {
     private static final String TAG = "BackgroundService";
@@ -22,6 +24,11 @@ public class BackgroundService extends Service {
     public void onCreate() {
         super.onCreate();
         createNotificationChannel();
+
+        PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
+        wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "IvanMessenger::WakeLock");
+        wakeLock.setReferenceCounted(false);
+        wakeLock.acquire();
     }
 
     @Override
@@ -35,11 +42,11 @@ public class BackgroundService extends Service {
             .setAutoCancel(false)
             .build();
 
-        startForeground(NOTIFICATION_ID, notification);
-
-        PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
-        wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "IvanMessenger::WakeLock");
-        wakeLock.acquire();
+        int type = 0;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            type = ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE;
+        }
+        ServiceCompat.startForeground(this, NOTIFICATION_ID, notification, type);
 
         return START_STICKY;
     }
