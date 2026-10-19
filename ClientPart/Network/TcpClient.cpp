@@ -1,16 +1,8 @@
 #include "TcpClient.h"
 #include "Logging.h"
 
-#ifdef Q_OS_ANDROID
-const QString IPADRESS_dev = "192.168.0.182";
-#else
-const QString IPADRESS_dev = "127.0.0.1";
-#endif
-
-const QString IPADRESS_dep = "31.192.108.37";
-
-TCPClient::TCPClient(int port, Router* msgRouter)
-    : port_(port), router_(msgRouter), socket_(nullptr), bConnected(false), reconnectDelay_(1000) {}
+TCPClient::TCPClient(const QString& host, int port, Router* msgRouter)
+    : host_(host), port_(port), router_(msgRouter), socket_(nullptr), bConnected(false), reconnectDelay_(1000) {}
 
 TCPClient::~TCPClient() {
     qCDebug(logTcp) << "Уничтожение TCPClient";
@@ -31,7 +23,7 @@ bool TCPClient::start() {
 }
 
 bool TCPClient::setupSocket() {
-    qCInfo(logTcp) << "Настройка сокета. Цель:" << IPADRESS_dev << ":" << port_;
+    qCInfo(logTcp) << "Настройка сокета. Цель:" << host_ << ":" << port_;
 
     if(socket_) {
         qCDebug(logTcp) << "Старый сокет существует, очищаем его";
@@ -56,7 +48,7 @@ bool TCPClient::setupSocket() {
     socket_->setPeerVerifyMode(QSslSocket::VerifyNone);
     socket_->setProtocol(QSsl::TlsV1_2OrLater);
 
-    socket_->connectToHostEncrypted(IPADRESS_dev, port_);
+    socket_->connectToHostEncrypted(host_, port_);
     emit connecting();
 
     return true;
@@ -153,4 +145,32 @@ void TCPClient::reconnect() {
     reconnectTimer_->start(reconnectDelay_);
 
     reconnectDelay_ = std::min(reconnectDelay_ * 2, MAX_RECONNECT_TIME_MS);
+}
+
+void TCPClient::setServer(const QString& host, int port) {
+    qCInfo(logTcp) << "Смена сервера на" << host << ":" << port;
+
+    host_ = host;
+    port_ = port;
+
+    if(reconnectTimer_) {
+        reconnectTimer_->stop();
+    }
+    reconnectDelay_ = 1000;
+
+    if(socket_) {
+        QSslSocket* oldSocket = socket_;
+        socket_ = nullptr;
+        router_->setSocket(nullptr);
+
+        oldSocket->disconnect(this);
+        oldSocket->abort();
+        oldSocket->deleteLater();
+    }
+
+    if(bConnected.exchange(false)) {
+        emit connectionLose();
+    }
+
+    start();
 }

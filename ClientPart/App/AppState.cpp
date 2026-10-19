@@ -1,6 +1,15 @@
 #include "AppState.h"
 #include "Logging.h"
 
+#ifdef Q_OS_ANDROID
+const QString IPADRESS_dev = "192.168.0.182";
+#else
+const QString IPADRESS_dev = "127.0.0.1";
+#endif
+
+const QString IPADRESS_dep = "31.192.108.37";
+constexpr int DEFAULT_SERVER_PORT = 6767;
+
 AppState::AppState(QObject* parent) : QObject(parent), settings_("IvanMessenger", "ClientConfig") {
     qCDebug(logState) << "Инициализация AppState. Загрузка данных из QSettings";
 
@@ -8,10 +17,13 @@ AppState::AppState(QObject* parent) : QObject(parent), settings_("IvanMessenger"
     user_.user_id = settings_.value("userId", -1).toInt();
     user_.username = settings_.value("username", "").toString().toStdString();
     connectionStatus_ = ConnectionState::Disconnected;
+    serverHost_ = settings_.value("serverHost", IPADRESS_dev).toString();
+    serverPort_ = settings_.value("serverPort", DEFAULT_SERVER_PORT).toInt();
 
     qCInfo(logState) << "Загружена сессия: userId=" << user_.user_id
                      << "username=" << QString::fromStdString(user_.username)
-                     << "hasToken=" << !sessionToken_.isEmpty();
+                     << "hasToken=" << !sessionToken_.isEmpty()
+                     << "server=" << serverHost_ << ":" << serverPort_;
 }
 
 
@@ -127,4 +139,24 @@ bool AppState::hasSession() const {
     bool has = !sessionToken_.isEmpty() && user_.user_id != -1;
     qCDebug(logState) << "Проверка наличия сессии:" << (has ? "да" : "нет");
     return has;
+}
+
+QString AppState::getServerHost() const {
+    return serverHost_;
+}
+
+int AppState::getServerPort() const {
+    return serverPort_;
+}
+
+void AppState::setServer(const QString& host, int port) {
+    qCInfo(logState) << "Изменение адреса сервера:" << serverHost_ << ":" << serverPort_ << "->" << host << ":" << port;
+
+    serverHost_ = host;
+    serverPort_ = port;
+
+    settings_.setValue("serverHost", host);
+    settings_.setValue("serverPort", port);
+
+    emit serverChanged();
 }

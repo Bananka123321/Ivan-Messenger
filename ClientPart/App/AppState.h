@@ -24,6 +24,8 @@ class AppState : public QObject {
     Q_PROPERTY(QString username READ getCurrentUsername NOTIFY usernameChanged FINAL)
     Q_PROPERTY(int userId READ getCurrentUserId NOTIFY userIdChanged FINAL)
     Q_PROPERTY(ConnectionState connectionStatus READ getConnectionStatus NOTIFY connectionStateChanged FINAL)
+    Q_PROPERTY(QString serverHost READ getServerHost NOTIFY serverChanged FINAL)
+    Q_PROPERTY(int serverPort READ getServerPort NOTIFY serverChanged FINAL)
 
 public:
     explicit AppState(QObject* parent = nullptr);
@@ -48,6 +50,10 @@ public:
     ConnectionState getConnectionStatus() const;
     void setConnectionStatus(ConnectionState newStatus);
 
+    QString getServerHost() const;
+    int getServerPort() const;
+    void setServer(const QString& host, int port);
+
     Q_INVOKABLE void saveSession(const QString& token, int id, const QString& username);
     Q_INVOKABLE void clearSession();
     Q_INVOKABLE bool hasSession() const;
@@ -58,6 +64,7 @@ signals:
     void usernameChanged();
     void userIdChanged();
     void connectionStateChanged(ConnectionState status);
+    void serverChanged();
 
 private:
     User user_;
@@ -66,4 +73,6 @@ private:
     QString sessionToken_;
     QSettings settings_;
     ConnectionState connectionStatus_;
+    QString serverHost_;
+    int serverPort_;
 };

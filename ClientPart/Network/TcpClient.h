@@ -15,12 +15,13 @@ class TCPClient : public QObject {
     Q_OBJECT
 
 public:
-    TCPClient(int port, Router* msgRouter);
+    TCPClient(const QString& host, int port, Router* msgRouter);
     ~TCPClient();
 
     bool start();
     void disconnect();
     bool isConnected() const;
+    void setServer(const QString& host, int port);
 
     std::function<void(const std::string&)> onMessage;
 
@@ -36,6 +37,7 @@ private slots:
     void onSslErrors(const QList<QSslError> &errors);
 
 private:
+    QString host_;
     int port_;
     QSslSocket* socket_ = nullptr;
     Router* router_;
