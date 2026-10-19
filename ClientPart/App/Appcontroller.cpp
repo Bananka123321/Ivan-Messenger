@@ -141,3 +141,20 @@ void AppController::stopPing() {
     pingTimer->deleteLater();
     pingTimer = nullptr;
 }
+
+bool AppController::changeServer(const QString& host, int port) {
+    const QString trimmed = host.trimmed();
+    if (trimmed.isEmpty() || port <= 0 || port > 65535) {
+        qCWarning(logState) << "Некорректный адрес сервера:" << host << ":" << port;
+        return false;
+    }
+
+    qCInfo(logState) << "Переключение на сервер:" << trimmed << ":" << port;
+
+    state_->setServer(trimmed, port);
+    state_->setConnectionToken("");
+    pendingResumeSession_ = state_->hasSession();
+
+    client_->setServer(trimmed, port);
+    return true;
+}

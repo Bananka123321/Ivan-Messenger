@@ -18,6 +18,7 @@ public:
     ~AppController();
 
     Q_INVOKABLE void checkAndResumeSession();
+    Q_INVOKABLE bool changeServer(const QString& host, int port);
 
 public slots:
     void loginRequest(const std::string& login, const std::string& password);

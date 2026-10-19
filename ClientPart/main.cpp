@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
     auto state = std::make_unique<AppState>();
     auto router = std::make_unique<Router>();
     auto handler = std::make_unique<Handler>();
-    auto client = std::make_unique<TCPClient>(6767, router.get());
+    auto client = std::make_unique<TCPClient>(state->getServerHost(), state->getServerPort(), router.get());
     auto appController = std::make_unique<AppController>(router.get(), state.get(), handler.get(), client.get());
     auto dialogManager = std::make_unique<DialogManager>(handler.get(), state.get());
 
