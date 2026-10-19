@@ -60,7 +60,7 @@ std::vector<MetaDialog_Client> DB_DialogManager::getUserDialogs(int user_id) {
             "    dp_peer.user_id AS peer_id, "
             "    u_peer.username AS peer_username, "
             "    dlm.last_msg_text, "
-            "    EXTRACT(EPOCH FROM dlm.last_msg_timestamp) * 1000 AS last_msg_timestamp, "
+            "    (EXTRACT(EPOCH FROM dlm.last_msg_timestamp) * 1000)::bigint AS last_msg_timestamp, "
             "    dlm.last_msg_sender_id, "
             "    CASE "
             "        WHEN dlm.last_msg_sender_id = $1 THEN 'Вы' "
@@ -87,8 +87,8 @@ std::vector<MetaDialog_Client> DB_DialogManager::getUserDialogs(int user_id) {
             md.peer_id = row["peer_id"].as<int>();
             md.username = row["peer_username"].as<std::string>();
             md.display_name = row["display_name"].as<std::string>();
-            md.last_msg_preview = row["last_msg_text"].as<std::string>();
-            md.last_msg_timestamp = row["last_msg_timestamp"].as<int64_t>();
+            md.last_msg_preview = row["last_msg_text"].as<std::string>("");
+            md.last_msg_timestamp = row["last_msg_timestamp"].as<int64_t>(0);
             md.unread_count = row["unread_count"].as<int>();
             result.push_back(std::move(md));
         }
@@ -119,4 +119,43 @@ std::vector<int> DB_DialogManager::getDialogParticipants(int64_t dialog_id) {
         LOG_CRITICAL(DB, "Ошибка получения участников диалога. dialogId=", dialog_id, " ошибка=", e.what());
     }
     return result;
+}
+
+std::optional<int64_t> DB_DialogManager::findOrCreatePrivateDialog(int user_a, int user_b) {
+    try {
+        pqxx::work txn(conn_);
+
+        txn.exec("SELECT pg_advisory_xact_lock($1, $2)",
+                 pqxx::params(std::min(user_a, user_b), std::max(user_a, user_b)));
+
+        const auto existing = txn.exec(
+            "SELECT dp1.dialog_id FROM dialog_participants dp1 "
+            "JOIN dialog_participants dp2 ON dp2.dialog_id = dp1.dialog_id "
+            "WHERE dp1.user_id = $1 AND dp2.user_id = $2 "
+            "AND (SELECT COUNT(*) FROM dialog_participants dp3 WHERE dp3.dialog_id = dp1.dialog_id) = 2 "
+            "LIMIT 1",
+            pqxx::params(user_a, user_b));
+
+        if (!existing.empty()) {
+            const auto id = existing[0][0].as<int64_t>();
+            txn.commit();
+            LOG_DEBUG(DB, "Найден существующий диалог. dialogId=", id, " users=", user_a, ",", user_b);
+            return id;
+        }
+
+        const auto created = txn.exec("INSERT INTO dialogs (updated_at) VALUES (NOW()) RETURNING id");
+        const auto id = created[0][0].as<int64_t>();
+
+        txn.exec(
+            "INSERT INTO dialog_participants (dialog_id, user_id, last_read_msg_id) "
+            "VALUES ($1, $2, 0), ($1, $3, 0)",
+            pqxx::params(id, user_a, user_b));
+
+        txn.commit();
+        LOG_INFO(DB, "Создан новый диалог. dialogId=", id, " users=", user_a, ",", user_b);
+        return id;
+    } catch (const std::exception& e) {
+        LOG_CRITICAL(DB, "Ошибка поиска/создания диалога. users=", user_a, ",", user_b, " ошибка=", e.what());
+        return std::nullopt;
+    }
 }

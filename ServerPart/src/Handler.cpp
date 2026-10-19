@@ -47,6 +47,10 @@ Handler::Handler(SessionManager& sm)
     handlers_["resumeSessionRequest"] = [this](const auto& client, const auto& j) {
         resumeSessionRequest(client, j);
     };
+
+    handlers_["openDialogRequest"] = [this](const auto& client, const auto& j) {
+        openDialogRequest(client, j);
+    };
 }
 
 void Handler::handleMessage(const std::shared_ptr<ClientSession>& client, std::string_view msg) {
@@ -399,4 +403,49 @@ void Handler::resumeSessionRequest(const std::shared_ptr<ClientSession> &client,
     LOG_INFO(HANDLER, "Успешное восстановление сессии. userId=", user_id.value(), " username='", username.value(), "' новый connectToken=", tempToken.substr(0, 8), "...");
 
     dispatcher_.sendTo(client, protocol::resumeSessionResponse(true, tempToken));
+}
+
+void Handler::openDialogRequest(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j) {
+    if (!client->getIsAuthenticated()) {
+        LOG_WARNING(HANDLER, "Попытка открытия диалога без авторизации. socket_fd=", client->getSocket());
+        dispatcher_.sendTo(client, protocol::openDialogResponse(false, 0, User{}, {}, "Not authenticated"));
+        return;
+    }
+
+    const int userId = client->getUserId();
+
+    int targetId = 0;
+    try {
+        targetId = j.at("target_user_id").get<int>();
+    } catch (const std::exception& e) {
+        LOG_WARNING(HANDLER, "Неверный target_user_id в openDialogRequest от userId=", userId, " ошибка=", e.what());
+        dispatcher_.sendTo(client, protocol::openDialogResponse(false, 0, User{}, {}, "Invalid target_user_id"));
+        return;
+    }
+
+    if (targetId == userId) {
+        dispatcher_.sendTo(client, protocol::openDialogResponse(false, 0, User{}, {}, "Cannot open dialog with yourself"));
+        return;
+    }
+
+    const auto peerName = userManager_.getUsername(targetId);
+    if (!peerName.has_value()) {
+        LOG_WARNING(HANDLER, "openDialog: пользователь не найден. userId=", userId, " targetId=", targetId);
+        dispatcher_.sendTo(client, protocol::openDialogResponse(false, 0, User{}, {}, "User not found"));
+        return;
+    }
+
+    const auto dialogId = dialogManager_.findOrCreatePrivateDialog(userId, targetId);
+    if (!dialogId.has_value()) {
+        dispatcher_.sendTo(client, protocol::openDialogResponse(false, 0, User{}, {}, "Database error"));
+        return;
+    }
+
+    auto history = messageManager_.getHistory(*dialogId, std::numeric_limits<int64_t>::max(), 50);
+    std::ranges::reverse(history);
+
+    LOG_INFO(HANDLER, "Диалог открыт. userId=", userId, " targetId=", targetId, " dialogId=", *dialogId, " сообщений=", history.size());
+
+    dispatcher_.sendTo(client, protocol::openDialogResponse(
+        true, *dialogId, User{.username = *peerName, .user_id = targetId}, history));
 }

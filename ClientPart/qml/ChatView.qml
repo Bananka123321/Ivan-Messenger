@@ -12,6 +12,31 @@ Rectangle {
 
     signal backRequested
 
+    function openChat(chatId, chatName) {
+        currentChatName = chatName;
+        currentChatId = chatId;
+        reloadMessages();
+    }
+
+    function reloadMessages() {
+        msgModel.clear();
+        if (!dialogManager || currentChatId === 0)
+            return;
+        const list = dialogManager.messagesForQml(currentChatId);
+        for (let i = 0; i < list.length; ++i)
+            msgModel.append(list[i]);
+    }
+
+    Component.onCompleted: reloadMessages()
+
+    Connections {
+        target: dialogManager
+        function onMessagesUpdated(dialogId) {
+            if (dialogId === root.currentChatId)
+                root.reloadMessages();
+        }
+    }
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
@@ -65,25 +90,31 @@ Rectangle {
                 anchors.fill: parent
                 anchors.margins: 16
                 spacing: 8
+                clip: true
                 model: ListModel {
                     id: msgModel
                 }
                 verticalLayoutDirection: ListView.BottomToTop
 
                 delegate: Rectangle {
-                    width: Math.min(messagesView.width * 0.7, implicitWidth + 32)
-                    height: msg.implicitHeight + 24
+                    required property string messageText
+                    required property bool isMine
+
+                    width: Math.min(messagesView.width * 0.7, msg.implicitWidth + 24)
+                    height: msg.paintedHeight + 24
                     radius: 12
                     color: isMine ? "#3B82F6" : "#27272A"
-                    anchors.right: isMine ? parent.right : undefined
+                    x: isMine ? messagesView.width - width : 0
 
                     Text {
                         id: msg
-                        text: messageText
+                        text: parent.messageText
                         color: "#F4F4F5"
                         font.pixelSize: 15
                         wrapMode: Text.Wrap
-                        anchors.fill: parent
+                        width: Math.min(implicitWidth, messagesView.width * 0.7 - 24)
+                        anchors.left: parent.left
+                        anchors.top: parent.top
                         anchors.margins: 12
                     }
                 }
@@ -108,14 +139,12 @@ Rectangle {
                     placeholderTextColor: "#71717A"
                     color: "#F4F4F5"
                     font.pixelSize: 15
-
                     background: Rectangle {
                         color: "#18181B"
                         radius: 20
                         border.color: messageInput.activeFocus ? "#3B82F6" : "#3F3F46"
                         border.width: 1
                     }
-
                     Keys.onReturnPressed: sendButton.clicked()
                 }
 
@@ -125,7 +154,6 @@ Rectangle {
                     font.pixelSize: 20
                     Layout.preferredWidth: 50
                     Layout.preferredHeight: 50
-
                     background: Rectangle {
                         color: parent.pressed ? "#1D4ED8" : "#3B82F6"
                         radius: 25
@@ -138,11 +166,8 @@ Rectangle {
                         verticalAlignment: Text.AlignVCenter
                     }
                     onClicked: {
-                        if (messageInput.text.trim() !== "") {
-                            msgModel.insert(0, {
-                                messageText: messageInput.text,
-                                isMine: true
-                            });
+                        if (messageInput.text.trim() !== "" && root.currentChatId !== 0) {
+                            appController.sendText(root.currentChatId, messageInput.text);
                             messageInput.text = "";
                         }
                     }

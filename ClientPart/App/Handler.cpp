@@ -39,6 +39,14 @@ Handler::Handler() {
     handlers_["resumeSessionResponse"] = [this] (const nlohmann::json& j) {
         onResumeSessionResponse(j["success"], j.value("token", ""));
     };
+
+    handlers_["openDialogResponse"] = [this](const nlohmann::json& j) {
+        if (!j.value("success", false)) {
+            onOpenDialogResponse(false, 0, User{}, {}, j.value("error", "Unknown error"));
+            return;
+        }
+        onOpenDialogResponse(true, j.at("dialog_id").get<int64_t>(), j.at("peer").get<User>(), j.at("messages").get<std::vector<Message>>(), "");
+    };
 }
 
 void Handler::handleMessage(std::string_view msg) {
@@ -132,4 +140,12 @@ void Handler::onResumeSessionResponse(const bool success, const std::string& tok
         qCWarning(logAuth) << "Ответ сервера: Ошибка восстановления сессии";
     }
     emit S_ResumeSessionResponse(success, token);
+}
+
+void Handler::onOpenDialogResponse(bool success, int64_t dialog_id, const User& peer, const std::vector<Message>& messages, const std::string& error) {
+    if (success) {
+        emit S_DialogOpened(true, dialog_id, peer, messages, "");
+    } else {
+        emit S_DialogOpened(false, 0, User{}, {}, error);
+    }
 }

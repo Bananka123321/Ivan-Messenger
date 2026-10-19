@@ -4,11 +4,8 @@ import QtQuick.Layouts
 import ClientModule
 
 Rectangle {
-    id: root
+    id: chatListRoot
     color: "#202023"
-
-    signal chatClicked(int chatId, string chatName)
-    signal userSelected(int userId, string username)
 
     property bool isSearching: false
 
@@ -28,7 +25,7 @@ Rectangle {
                 spacing: 12
 
                 Text {
-                    visible: !root.isSearching
+                    visible: !chatListRoot.isSearching
                     text: "Чаты"
                     color: "#F4F4F5"
                     font.bold: true
@@ -37,7 +34,7 @@ Rectangle {
                 }
 
                 Button {
-                    visible: !root.isSearching
+                    visible: !chatListRoot.isSearching
                     text: "🔍"
                     font.pixelSize: 22
                     background: Rectangle {
@@ -51,14 +48,14 @@ Rectangle {
                         verticalAlignment: Text.AlignVCenter
                     }
                     onClicked: {
-                        root.isSearching = true;
+                        chatListRoot.isSearching = true;
                         searchField.forceActiveFocus();
                     }
                 }
 
                 TextField {
                     id: searchField
-                    visible: root.isSearching
+                    visible: chatListRoot.isSearching
                     Layout.fillWidth: true
                     placeholderText: "Поиск..."
                     placeholderTextColor: "#71717A"
@@ -86,7 +83,7 @@ Rectangle {
                 }
 
                 Button {
-                    visible: root.isSearching
+                    visible: chatListRoot.isSearching
                     text: "✕"
                     font.pixelSize: 24
                     font.bold: true
@@ -101,7 +98,7 @@ Rectangle {
                         verticalAlignment: Text.AlignVCenter
                     }
                     onClicked: {
-                        root.isSearching = false;
+                        chatListRoot.isSearching = false;
                         searchField.text = "";
                         if (searchViewModel)
                             searchViewModel.searchUser("");
@@ -111,10 +108,10 @@ Rectangle {
         }
 
         ListView {
-            visible: !root.isSearching
+            visible: !chatListRoot.isSearching
             Layout.fillWidth: true
             Layout.fillHeight: true
-            model: chatModel
+            model: dialogManager ? dialogManager.dialogs : []
             clip: true
 
             delegate: Rectangle {
@@ -136,7 +133,7 @@ Rectangle {
                         Layout.alignment: Qt.AlignVCenter
                         Text {
                             anchors.centerIn: parent
-                            text: model.name.toString().charAt(0)
+                            text: modelData.name ? modelData.name.charAt(0).toUpperCase() : "?"
                             color: "#FFFFFF"
                             font.bold: true
                             font.pixelSize: 20
@@ -148,7 +145,7 @@ Rectangle {
                         Layout.alignment: Qt.AlignVCenter
                         spacing: 4
                         Text {
-                            text: model.name
+                            text: modelData.name
                             color: "#F4F4F5"
                             font.bold: true
                             font.pixelSize: 16
@@ -156,7 +153,7 @@ Rectangle {
                             elide: Text.ElideRight
                         }
                         Text {
-                            text: model.lastMsg
+                            text: modelData.lastMsg
                             color: "#A1A1AA"
                             font.pixelSize: 14
                             Layout.fillWidth: true
@@ -165,7 +162,7 @@ Rectangle {
                     }
 
                     Text {
-                        text: model.time
+                        text: modelData.time
                         color: "#71717A"
                         font.pixelSize: 12
                         Layout.alignment: Qt.AlignTop | Qt.AlignRight
@@ -176,7 +173,10 @@ Rectangle {
                     id: mouseArea
                     anchors.fill: parent
                     hoverEnabled: true
-                    onClicked: root.chatClicked(model.chatId, model.name)
+                    onClicked: {
+                        if (appController)
+                            appController.openDialog(modelData.peerId);
+                    }
                 }
 
                 Rectangle {
@@ -190,7 +190,7 @@ Rectangle {
         }
 
         Rectangle {
-            visible: root.isSearching
+            visible: chatListRoot.isSearching
             Layout.fillWidth: true
             Layout.fillHeight: true
             color: "#202023"
@@ -251,11 +251,14 @@ Rectangle {
                         anchors.fill: parent
                         hoverEnabled: true
                         onClicked: {
-                            root.isSearching = false;
+                            const userId = modelData.id;
+                            if (searchViewModel)
+                                searchViewModel.selectUser(userId);
+
+                            chatListRoot.isSearching = false;
                             searchField.text = "";
                             if (searchViewModel)
                                 searchViewModel.searchUser("");
-                            root.userSelected(modelData.id, modelData.username);
                         }
                     }
 

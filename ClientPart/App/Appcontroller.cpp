@@ -1,9 +1,10 @@
 #define NOMINMAX
 #include "Appcontroller.h"
 #include "Logging.h"
+#include <chrono>
 
-AppController::AppController(Router* router, AppState* state, Handler* handler, TCPClient* client)
-    : router_(router), state_(state), handler_(handler), client_(client) {
+AppController::AppController(Router* router, AppState* state, Handler* handler, TCPClient* client, DialogManager* dialogManager)
+    : router_(router), state_(state), handler_(handler), client_(client), dialogManager_(dialogManager) {
 
     qCDebug(logMain) << "Инициализация AppController";
 
@@ -12,6 +13,7 @@ AppController::AppController(Router* router, AppState* state, Handler* handler, 
         router_->setReconnecting(false);
         state_->saveSession(QString::fromStdString(sessionToken), user_id, QString::fromStdString(login));
         state_->setConnectionToken(connectionToken);
+        router_->getDialogsRequest();
     });
 
     connect(handler, &Handler::S_registerSuccess, this, [this](const std::string& login, const int user_id, const std::string& connectionToken, const std::string& sessionToken){
@@ -19,6 +21,7 @@ AppController::AppController(Router* router, AppState* state, Handler* handler, 
         router_->setReconnecting(false);
         state_->saveSession(QString::fromStdString(sessionToken), user_id, QString::fromStdString(login));
         state_->setConnectionToken(connectionToken);
+        router_->getDialogsRequest();
     });
 
     connect(client_, &TCPClient::connectionLose, this, [this](){
@@ -58,10 +61,28 @@ AppController::AppController(Router* router, AppState* state, Handler* handler, 
         if (success) {
             qCInfo(logAuth) << "Сессия успешно восстановлена";
             state_->setConnectionToken(token);
+            router_->getDialogsRequest();
         } else {
             qCWarning(logAuth) << "Не удалось восстановить сессию";
         }
         emit resumeSessionFinished(success);
+    });
+
+    connect(handler_, &Handler::S_DialogOpened, this, [this](bool success, int64_t dialog_id, const User& peer, const std::vector<Message>& messages, const std::string& error) {
+        if (success) {
+            qCInfo(logDialog) << "Диалог успешно открыт. dialog_id:" << dialog_id << "сообщений в истории:" << messages.size();
+
+            dialogManager_->setCurrentDialog(dialog_id, peer, messages);
+            emit dialogOpenedSuccessfully(dialog_id, QString::fromStdString(peer.username));
+        } else {
+            qCWarning(logDialog) << "Ошибка открытия диалога:" << QString::fromStdString(error);
+            emit dialogOpenFailed(QString::fromStdString(error));
+        }
+    });
+
+    connect(dialogManager_, &DialogManager::unknownDialog, this, [this](int64_t dialog_id){
+        qCInfo(logDialog) << "Сообщение из неизвестного диалога:" << dialog_id << ". Запрос списка диалогов";
+        router_->getDialogsRequest();
     });
 }
 
@@ -157,4 +178,27 @@ bool AppController::changeServer(const QString& host, int port) {
 
     client_->setServer(trimmed, port);
     return true;
+}
+
+void AppController::openDialog(qint64 target_user_id) {
+    qCInfo(logDialog) << "Запрос на открытие диалога с пользователем:" << target_user_id;
+    router_->openDialogRequest(target_user_id);
+}
+
+void AppController::sendText(qint64 dialog_id, const QString& text) {
+    const QString trimmed = text.trimmed();
+    if (trimmed.isEmpty()) {
+        qCDebug(logDialog) << "Пустое сообщение. Отправка отменена";
+        return;
+    }
+
+    Message msg;
+    msg.dialog_id = static_cast<int>(dialog_id);
+    msg.sender_id = state_->getCurrentUserId();
+    msg.type = MessageType::Text;
+    msg.created_at_ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    msg.payload = TextContent{ .text = trimmed.toStdString() };
+
+    sendMessage(msg);
+    dialogManager_->addMessage(dialog_id, msg);
 }

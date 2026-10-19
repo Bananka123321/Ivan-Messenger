@@ -23,6 +23,7 @@ public:
     void ping();
     void resumeConnectionRequest(const std::string& token);
     void resumeSessionRequest(const std::string& token);
+    void openDialogRequest(int64_t target_user_id);
 
     void setSocket(QSslSocket* socket);
     void setReconnecting(bool value);

@@ -116,3 +116,9 @@ void Router::sendPacket(const std::string& msg, bool force) {
         qCCritical(logRouter) << "Критическое исключение при записи в сокет:" << e.what();
     }
 }
+
+void Router::openDialogRequest(int64_t target_user_id) {
+    qCInfo(logRouter) << "Формирование запроса на открытие диалога с user_id:" << target_user_id;
+    std::string request = protocol::openDialogRequest(target_user_id);
+    sendPacket(request);
+}

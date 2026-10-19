@@ -29,6 +29,7 @@ private:
     void onGetDialogsResponse(const bool success, const std::vector<MetaDialog_Client>& dialogs, const std::string& reason);
     void onResumeConnectionResponse(const bool success);
     void onResumeSessionResponse(const bool success, const std::string& token);
+    void onOpenDialogResponse(bool success, int64_t dialog_id, const User& peer, const std::vector<Message>& messages, const std::string& error);
 
 signals:
     void S_loginSuccess(const std::string& login, const int user_id, const std::string& connectionToken, const std::string& sessionToken);
@@ -47,4 +48,5 @@ signals:
     void S_ResumeConnectionSuccess();
     void S_ResumeSessionResponse(const bool success, const std::string& token);
 
+    void S_DialogOpened(bool success, int64_t dialog_id, const User& peer, const std::vector<Message>& messages, const std::string& error);
 };

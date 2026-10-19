@@ -14,3 +14,17 @@ server.key
 *.autosave
 CMakePresets.json
 CMakeLists.txt.user
+
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+.mcp.json
+AGENTS.md
+.cursor/
+.cursorrules
+.cursorignore
+.aider*
+.continue/
+.codeium/
+.windsurfrules
+.github/copilot-instructions.md

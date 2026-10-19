@@ -21,6 +21,8 @@ public:
     QList<QVariantMap> getUsers() const;
     bool isSearching() const;
 
+    Q_INVOKABLE void selectUser(qint64 user_id);
+
 public slots:
     void searchUser(const QString& username);
     void onUserSearchResults(const std::vector<User>& users);
@@ -28,6 +30,7 @@ public slots:
 signals:
     void usersChanged();
     void isSearchingChanged();
+    void userSelectedForDialog(qint64 user_id);
 
 private:
     Router* router_;

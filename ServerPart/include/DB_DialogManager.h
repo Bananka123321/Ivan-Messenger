@@ -16,6 +16,7 @@ public:
     std::vector<MetaDialog_Client> getUserDialogs(int user_id);
     void updateLastMessage(const Message& msg);
     std::vector<int> getDialogParticipants(int64_t dialog_id);
+    std::optional<int64_t> findOrCreatePrivateDialog(int user_a, int user_b);
 
 private:
     pqxx::connection conn_;

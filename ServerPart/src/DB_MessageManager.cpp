@@ -33,7 +33,7 @@ std::vector<Message> DB_MessageManager::getHistory(int64_t dialog_id, int64_t be
         pqxx::work txn(conn_);
         const auto rows = txn.exec(
         "SELECT id, dialog_id, sender_id, type, "
-        "EXTRACT(EPOCH FROM created_at) * 1000 as timestamp_ms, "
+        "(EXTRACT(EPOCH FROM created_at) * 1000)::bigint as timestamp_ms, "
         "payload::text "
         "FROM messages "
         "WHERE dialog_id = $1 AND id < $2 "

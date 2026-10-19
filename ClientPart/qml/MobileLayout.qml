@@ -2,6 +2,18 @@ import QtQuick
 import QtQuick.Controls
 
 Item {
+    function showChat(chatId, chatName) {
+        const props = {
+            currentChatId: chatId,
+            currentChatName: chatName,
+            isMobile: true
+        };
+        if (mobileStack.depth === 1)
+            mobileStack.push(chatViewComponent, props);
+        else
+            mobileStack.replace(chatViewComponent, props);
+    }
+
     StackView {
         id: mobileStack
         anchors.fill: parent
@@ -14,7 +26,6 @@ Item {
                 duration: 150
             }
         }
-
         pushExit: Transition {
             PropertyAnimation {
                 property: "opacity"
@@ -24,29 +35,7 @@ Item {
             }
         }
 
-        initialItem: ChatList {
-            onChatClicked: function (chatId, chatName) {
-                if (mobileStack.depth === 1) {
-                    mobileStack.push(chatViewComponent, {
-                        currentChatId: chatId,
-                        currentChatName: chatName,
-                        isMobile: true
-                    });
-                } else {
-                    mobileStack.replace(chatViewComponent, {
-                        currentChatId: chatId,
-                        currentChatName: chatName,
-                        isMobile: true
-                    });
-                }
-            }
-
-            onUserSelected: function (userId, username) {
-                if (appController) {
-                    appController.loadDialog(userId);
-                }
-            }
-        }
+        initialItem: ChatList {}
     }
 
     Component {
@@ -60,5 +49,12 @@ Item {
         anchors.bottom: parent.bottom
         anchors.right: parent.right
         anchors.margins: 16
+    }
+
+    Connections {
+        target: appController
+        function onDialogOpenedSuccessfully(dialogId, peerName) {
+            showChat(dialogId, peerName);
+        }
     }
 }

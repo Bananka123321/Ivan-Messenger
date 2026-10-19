@@ -9,7 +9,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 find_package(Qt6 REQUIRED COMPONENTS
-    Widgets Quick QuickControls2 Qml Network
+    Quick QuickControls2 Qml Network
 )
 
 set(CLIENT_SOURCES
@@ -89,7 +89,6 @@ target_include_directories(Client PRIVATE
 )
 
 target_link_libraries(Client PRIVATE
-    Qt6::Widgets
     Qt6::Network
     Qt6::Quick
     Qt6::QuickControls2

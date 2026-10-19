@@ -9,12 +9,6 @@ Item {
         ChatList {
             Layout.preferredWidth: 320
             Layout.fillHeight: true
-
-            onChatClicked: function (chatId, chatName) {
-                console.log("Выбран чат:", chatName);
-                chatView.currentChatId = chatId;
-                chatView.currentChatName = chatName;
-            }
         }
 
         ChatView {
@@ -28,6 +22,13 @@ Item {
             anchors.top: parent.top
             anchors.right: parent.right
             anchors.margins: 16
+        }
+    }
+
+    Connections {
+        target: appController
+        function onDialogOpenedSuccessfully(dialogId, peerName) {
+            chatView.openChat(dialogId, peerName);
         }
     }
 }
