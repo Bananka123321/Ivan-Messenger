@@ -17,5 +17,6 @@
         <file>qml/ServerDialog.qml</file>
         <file>qml/AttachmentSheet.qml</file>
         <file>qml/EmojiPanel.qml</file>
+        <file>qml/MessageComposer.qml</file>
     </qresource>
 </RCC>
