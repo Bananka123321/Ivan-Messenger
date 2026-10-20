@@ -13,7 +13,6 @@ find_package(Qt6 REQUIRED COMPONENTS
 )
 
 set(CLIENT_SOURCES
-    main.cpp
     Network/TcpClient.cpp
     Network/Router.cpp
     Network/PacketIO_Client.cpp
@@ -51,9 +50,25 @@ set(CLIENT_HEADERS
     ../common/User.h
 )
 
-qt_add_executable(Client
+add_library(client_core STATIC
     ${CLIENT_SOURCES}
     ${CLIENT_HEADERS}
+)
+
+target_include_directories(client_core PUBLIC
+    Network
+    App
+    ViewModels
+    ../common
+)
+
+target_link_libraries(client_core PUBLIC
+    Qt6::Network
+    Qt6::Qml
+)
+
+qt_add_executable(Client
+    main.cpp
 
     resources.qrc
     qml.qrc
@@ -90,6 +105,7 @@ target_include_directories(Client PRIVATE
 )
 
 target_link_libraries(Client PRIVATE
+    client_core
     Qt6::Network
     Qt6::Quick
     Qt6::QuickControls2
@@ -126,6 +142,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug-sanitize" AND NOT ANDROID)
 
         # set(SANITIZER_FLAGS -fsanitize=thread,undefined -fno-omit-frame-pointer -g)
 
+        target_compile_options(client_core PRIVATE ${SANITIZER_FLAGS})
         target_compile_options(Client PRIVATE ${SANITIZER_FLAGS})
         target_link_options(Client PRIVATE ${SANITIZER_FLAGS})
 
