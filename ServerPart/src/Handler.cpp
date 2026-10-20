@@ -209,6 +209,13 @@ void Handler::sendMessage(const std::shared_ptr<ClientSession>& client, const nl
         text = std::move(cleanText);
     }
 
+    const auto participants = dialogManager_.getDialogParticipants(msg.dialog_id);
+    if (std::ranges::find(participants, clientUserId) == participants.end()) {
+        LOG_WARNING(HANDLER, "Попытка отправки в чужой диалог! userId=", clientUserId, " dialogId=", msg.dialog_id);
+        dispatcher_.sendTo(client, protocol::errorMessage("You are not a participant of this dialog"));
+        return;
+    }
+
     msg.created_at_ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
     const auto saved_id = messageManager_.saveMessage(msg);
@@ -221,7 +228,6 @@ void Handler::sendMessage(const std::shared_ptr<ClientSession>& client, const nl
     msg.id = saved_id.value();
     dialogManager_.updateLastMessage(msg);
 
-    const auto& participants = dialogManager_.getDialogParticipants(msg.dialog_id);
     int sentCount = 0;
     for (const auto participant : participants) {
         if (participant == msg.sender_id) {
