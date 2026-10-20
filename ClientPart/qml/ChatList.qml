@@ -9,6 +9,20 @@ Rectangle {
 
     property bool isSearching: false
 
+    signal menuRequested
+
+    function startSearch() {
+        isSearching = true;
+        searchField.forceActiveFocus();
+    }
+
+    function stopSearch() {
+        isSearching = false;
+        searchField.text = "";
+        if (searchViewModel)
+            searchViewModel.searchUser("");
+    }
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
@@ -20,9 +34,18 @@ Rectangle {
 
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: 16
-                anchors.rightMargin: 16
-                spacing: 12
+                anchors.leftMargin: 8
+                anchors.rightMargin: 8
+                spacing: 4
+
+                IconButton {
+                    visible: !chatListRoot.isSearching
+                    glyph: "☰"
+                    glyphSize: 22
+                    glyphColor: "#F4F4F5"
+                    tip: "Меню"
+                    onClicked: chatListRoot.menuRequested()
+                }
 
                 Text {
                     visible: !chatListRoot.isSearching
@@ -33,30 +56,22 @@ Rectangle {
                     Layout.fillWidth: true
                 }
 
-                Button {
+                ConnectionIndicator {
                     visible: !chatListRoot.isSearching
-                    text: "🔍"
-                    font.pixelSize: 22
-                    background: Rectangle {
-                        color: "transparent"
-                    }
-                    contentItem: Text {
-                        text: parent.text
-                        color: "#A1A1AA"
-                        font: parent.font
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
-                    onClicked: {
-                        chatListRoot.isSearching = true;
-                        searchField.forceActiveFocus();
-                    }
+                }
+
+                IconButton {
+                    visible: !chatListRoot.isSearching
+                    glyph: "🔍"
+                    tip: "Поиск"
+                    onClicked: chatListRoot.startSearch()
                 }
 
                 TextField {
                     id: searchField
                     visible: chatListRoot.isSearching
                     Layout.fillWidth: true
+                    Layout.leftMargin: 8
                     placeholderText: "Поиск..."
                     placeholderTextColor: "#71717A"
                     color: "#F4F4F5"
@@ -82,32 +97,18 @@ Rectangle {
                     }
                 }
 
-                Button {
+                IconButton {
                     visible: chatListRoot.isSearching
-                    text: "✕"
-                    font.pixelSize: 24
-                    font.bold: true
-                    background: Rectangle {
-                        color: "transparent"
-                    }
-                    contentItem: Text {
-                        text: parent.text
-                        color: "#A1A1AA"
-                        font: parent.font
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
-                    onClicked: {
-                        chatListRoot.isSearching = false;
-                        searchField.text = "";
-                        if (searchViewModel)
-                            searchViewModel.searchUser("");
-                    }
+                    glyph: "✕"
+                    glyphSize: 20
+                    tip: "Закрыть поиск"
+                    onClicked: chatListRoot.stopSearch()
                 }
             }
         }
 
         ListView {
+            id: dialogsView
             visible: !chatListRoot.isSearching
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -125,19 +126,10 @@ Rectangle {
                     anchors.rightMargin: 16
                     spacing: 12
 
-                    Rectangle {
-                        Layout.preferredWidth: 48
-                        Layout.preferredHeight: 48
-                        radius: 24
-                        color: "#3B82F6"
+                    Avatar {
+                        name: modelData.name ? modelData.name : ""
+                        size: 48
                         Layout.alignment: Qt.AlignVCenter
-                        Text {
-                            anchors.centerIn: parent
-                            text: modelData.name ? modelData.name.charAt(0).toUpperCase() : "?"
-                            color: "#FFFFFF"
-                            font.bold: true
-                            font.pixelSize: 20
-                        }
                     }
 
                     ColumnLayout {
@@ -161,11 +153,34 @@ Rectangle {
                         }
                     }
 
-                    Text {
-                        text: modelData.time
-                        color: "#71717A"
-                        font.pixelSize: 12
-                        Layout.alignment: Qt.AlignTop | Qt.AlignRight
+                    ColumnLayout {
+                        Layout.alignment: Qt.AlignVCenter
+                        spacing: 6
+
+                        Text {
+                            text: modelData.time
+                            color: "#71717A"
+                            font.pixelSize: 12
+                            Layout.alignment: Qt.AlignRight
+                        }
+
+                        Rectangle {
+                            visible: (modelData.unread || 0) > 0
+                            Layout.alignment: Qt.AlignRight
+                            Layout.preferredWidth: Math.max(20, unreadText.implicitWidth + 10)
+                            Layout.preferredHeight: 20
+                            radius: 10
+                            color: "#3B82F6"
+
+                            Text {
+                                id: unreadText
+                                anchors.centerIn: parent
+                                text: modelData.unread || ""
+                                color: "#FFFFFF"
+                                font.bold: true
+                                font.pixelSize: 11
+                            }
+                        }
                     }
                 }
 
@@ -224,18 +239,9 @@ Rectangle {
                         anchors.rightMargin: 16
                         spacing: 12
 
-                        Rectangle {
-                            Layout.preferredWidth: 40
-                            Layout.preferredHeight: 40
-                            radius: 20
-                            color: "#10B981"
-                            Text {
-                                anchors.centerIn: parent
-                                text: modelData.username ? modelData.username.charAt(0).toUpperCase() : "?"
-                                color: "#FFFFFF"
-                                font.bold: true
-                                font.pixelSize: 18
-                            }
+                        Avatar {
+                            name: modelData.username ? modelData.username : ""
+                            size: 40
                         }
 
                         Text {
@@ -279,6 +285,63 @@ Rectangle {
                 color: "#71717A"
                 font.pixelSize: 14
             }
+        }
+    }
+
+    ColumnLayout {
+        visible: !chatListRoot.isSearching && dialogsView.count === 0
+        anchors.centerIn: parent
+        spacing: 8
+
+        Text {
+            Layout.alignment: Qt.AlignHCenter
+            text: "Чатов пока нет"
+            color: "#A1A1AA"
+            font.pixelSize: 16
+        }
+        Text {
+            Layout.alignment: Qt.AlignHCenter
+            text: "Найдите собеседника через поиск"
+            color: "#71717A"
+            font.pixelSize: 14
+        }
+    }
+
+    IconButton {
+        id: newChatButton
+        visible: !chatListRoot.isSearching
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.margins: 16
+        implicitWidth: 56
+        implicitHeight: 56
+        glyph: "✎"
+        glyphSize: 24
+        glyphColor: "#FFFFFF"
+        bgColor: "#3B82F6"
+        hoverColor: "#2563EB"
+        pressedColor: "#1D4ED8"
+        tip: "Новый чат"
+        onClicked: newChatMenu.popup(newChatButton, newChatButton.width - newChatMenu.implicitWidth, -newChatMenu.implicitHeight - 8)
+    }
+
+    AppMenu {
+        id: newChatMenu
+
+        AppMenuItem {
+            glyph: "👤"
+            text: "Новый чат"
+            onTriggered: chatListRoot.startSearch()
+        }
+        AppMenuItem {
+            glyph: "👥"
+            text: "Новая группа"
+            onTriggered: ApplicationWindow.window.todo("Группы")
+        }
+        AppMenuItem {
+            glyph: "📢"
+            text: "Новый канал"
+            onTriggered: ApplicationWindow.window.todo("Каналы")
         }
     }
 }

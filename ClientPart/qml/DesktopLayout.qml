@@ -17,12 +17,6 @@ Item {
             Layout.fillHeight: true
             isMobile: false
         }
-
-        ConnectionIndicator {
-            anchors.top: parent.top
-            anchors.right: parent.right
-            anchors.margins: 16
-        }
     }
 
     Connections {

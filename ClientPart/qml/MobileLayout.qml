@@ -45,12 +45,6 @@ Item {
         }
     }
 
-    ConnectionIndicator {
-        anchors.bottom: parent.bottom
-        anchors.right: parent.right
-        anchors.margins: 16
-    }
-
     Connections {
         target: appController
         function onDialogOpenedSuccessfully(dialogId, peerName) {
