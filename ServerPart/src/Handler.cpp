@@ -299,9 +299,9 @@ void Handler::historyRequest(const std::shared_ptr<ClientSession>& client, const
         return;
     }
 
-    if (limit <= 0 || limit > 100) {
+    if (limit <= 0 || limit > protocol::HISTORY_MAX_LIMIT) {
         LOG_WARNING(HANDLER, "Недопустимый limit в historyRequest от userId=", clientUserId, " limit=", limit);
-        dispatcher_.sendTo(client, protocol::errorMessage("Limit must be between 1 and 100"));
+        dispatcher_.sendTo(client, protocol::errorMessage("Limit must be between 1 and " + std::to_string(protocol::HISTORY_MAX_LIMIT)));
         return;
     }
 

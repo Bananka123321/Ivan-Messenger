@@ -46,7 +46,7 @@ void Router::searchUser(const std::string& text) {
 
 void Router::historyRequest(const int64_t dialog_id, const int64_t last_msg_id) {
     qCDebug(logRouter) << "Формирование запроса истории. dialog_id:" << dialog_id << "last_msg_id:" << last_msg_id;
-    std::string request = protocol::historyRequest(dialog_id, last_msg_id, 200);
+    std::string request = protocol::historyRequest(dialog_id, last_msg_id, protocol::HISTORY_MAX_LIMIT);
     sendPacket(request);
 }
 

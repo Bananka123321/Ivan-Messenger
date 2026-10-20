@@ -108,6 +108,8 @@ inline void from_json(const nlohmann::json& j, MetaDialog_Client& md) {
 
 namespace protocol {
 
+constexpr int HISTORY_MAX_LIMIT = 100;
+
     
 //      CHAT
 //=================================================================================================================================================================
