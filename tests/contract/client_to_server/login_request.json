@@ -1,0 +1,5 @@
+{
+  "type": "loginRequest",
+  "username": "ivan",
+  "password": "secret1"
+}

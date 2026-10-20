@@ -1,0 +1,5 @@
+{
+  "type": "registerRequest",
+  "username": "ivan",
+  "password": "secret1"
+}

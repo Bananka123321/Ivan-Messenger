@@ -35,6 +35,7 @@ target_link_libraries(client_test_support PUBLIC client_core Qt6::Test GTest::gt
 target_compile_definitions(client_test_support PUBLIC
     TEST_CERT_FILE="${TEST_DATA_DIR}/test.crt"
     TEST_KEY_FILE="${TEST_DATA_DIR}/test.key"
+    CONTRACT_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../tests/contract"
 )
 
 function(add_client_test name label)
@@ -53,3 +54,4 @@ add_client_test(test_dialog_manager unit unit/test_dialog_manager.cpp)
 add_client_test(test_view_models unit unit/test_view_models.cpp)
 add_client_test(test_network integration integration/test_network.cpp)
 add_client_test(test_app_flow integration integration/test_app_flow.cpp)
+add_client_test(test_contract_client contract contract/test_contract_client.cpp)

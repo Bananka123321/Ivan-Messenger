@@ -1,0 +1,14 @@
+{
+  "type": "getDialogsResponse",
+  "success": true,
+  "dialogs": [
+    {
+      "dialog_id": 15,
+      "peer_id": 3,
+      "username": "masha",
+      "last_msg_preview": "Привет!",
+      "last_msg_timestamp": 1760968800123
+    }
+  ],
+  "error": ""
+}

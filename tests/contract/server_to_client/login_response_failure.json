@@ -1,0 +1,9 @@
+{
+  "type": "loginResponse",
+  "success": false,
+  "user_id": -1,
+  "username": "ivan",
+  "connectToken": "",
+  "sessionToken": "",
+  "error": "Invalid password"
+}

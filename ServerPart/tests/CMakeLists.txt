@@ -33,6 +33,7 @@ target_compile_definitions(server_test_support PUBLIC
     TEST_CERT_FILE="${TEST_DATA_DIR}/test.crt"
     TEST_KEY_FILE="${TEST_DATA_DIR}/test.key"
     SCHEMA_SQL_FILE="${CMAKE_CURRENT_SOURCE_DIR}/../sql/schema.sql"
+    CONTRACT_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../tests/contract"
 )
 
 add_test(NAME test_db_start COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/scripts/test_db.sh start)
@@ -72,3 +73,4 @@ add_server_test(test_db_tokens integration integration/test_db_tokens.cpp)
 add_server_test(test_db_dialogs_messages integration integration/test_db_dialogs_messages.cpp)
 add_server_test(test_handler_auth integration integration/test_handler_auth.cpp)
 add_server_test(test_handler_messaging integration integration/test_handler_messaging.cpp)
+add_server_test(test_contract_server contract contract/test_contract_server.cpp)

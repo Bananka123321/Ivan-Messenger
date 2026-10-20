@@ -1,0 +1,13 @@
+{
+  "type": "searchUserResponse",
+  "result": [
+    {
+      "user_id": 3,
+      "username": "masha"
+    },
+    {
+      "user_id": 4,
+      "username": "mashka"
+    }
+  ]
+}

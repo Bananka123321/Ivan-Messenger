@@ -1,0 +1,6 @@
+{
+  "type": "historyRequest",
+  "dialog_id": 15,
+  "last_msg_id": 5000000000,
+  "limit": 100
+}
