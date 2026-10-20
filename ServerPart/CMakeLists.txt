@@ -67,3 +67,9 @@ target_link_libraries(server_core PUBLIC
 
 add_executable(Server src/main.cpp)
 target_link_libraries(Server PRIVATE server_core)
+
+option(BUILD_TESTS "Build unit, integration and contract tests" OFF)
+if(BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
