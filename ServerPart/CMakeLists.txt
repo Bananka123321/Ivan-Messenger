@@ -9,7 +9,6 @@ project(Server)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(SERVER_SOURCES
-    src/main.cpp
     src/TcpServer.cpp
     src/ClientSession.cpp
     src/Handler.cpp
@@ -53,15 +52,18 @@ if(ENABLE_UBSAN)
     add_link_options(-fsanitize=undefined)
 endif()
 
-add_executable(Server ${SERVER_SOURCES})
+add_library(server_core STATIC ${SERVER_SOURCES})
 
-target_include_directories(Server PRIVATE
+target_include_directories(server_core PUBLIC
     include
     ../common
 )
 
-target_link_libraries(Server PRIVATE
+target_link_libraries(server_core PUBLIC
     pqxx pq crypto pthread
     ${ARGON2_LIBRARIES}
     OpenSSL::SSL
 )
+
+add_executable(Server src/main.cpp)
+target_link_libraries(Server PRIVATE server_core)
