@@ -21,3 +21,5 @@ function(add_server_test name label)
 endfunction()
 
 add_server_test(test_validator unit unit/test_validator.cpp)
+add_server_test(test_message unit unit/test_message.cpp)
+add_server_test(test_protocol unit unit/test_protocol.cpp)
