@@ -9,14 +9,16 @@
         <file>qml/ChatView.qml</file>
         <file>qml/SearchPanel.qml</file>
         <file>qml/ConnectionIndicator.qml</file>
+        <file>qml/ServerDialog.qml</file>
         <file>qml/IconButton.qml</file>
         <file>qml/Avatar.qml</file>
         <file>qml/AppMenu.qml</file>
         <file>qml/AppMenuItem.qml</file>
         <file>qml/ConfirmDialog.qml</file>
-        <file>qml/ServerDialog.qml</file>
         <file>qml/AttachmentSheet.qml</file>
         <file>qml/EmojiPanel.qml</file>
         <file>qml/MessageComposer.qml</file>
+        <file>qml/SideDrawer.qml</file>
+        <file>qml/SettingsPage.qml</file>
     </qresource>
 </RCC>

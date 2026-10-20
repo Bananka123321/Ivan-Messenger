@@ -35,7 +35,9 @@ Item {
             }
         }
 
-        initialItem: ChatList {}
+        initialItem: ChatList {
+            onMenuRequested: drawer.open()
+        }
     }
 
     Component {
@@ -43,6 +45,20 @@ Item {
         ChatView {
             onBackRequested: mobileStack.pop()
         }
+    }
+
+    Component {
+        id: settingsComponent
+        SettingsPage {
+            isMobile: true
+            onBackRequested: mobileStack.pop()
+        }
+    }
+
+    SideDrawer {
+        id: drawer
+        swipeEnabled: mobileStack.depth === 1
+        onSettingsRequested: mobileStack.push(settingsComponent)
     }
 
     Connections {
