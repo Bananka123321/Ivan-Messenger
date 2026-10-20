@@ -15,5 +15,7 @@
         <file>qml/AppMenuItem.qml</file>
         <file>qml/ConfirmDialog.qml</file>
         <file>qml/ServerDialog.qml</file>
+        <file>qml/AttachmentSheet.qml</file>
+        <file>qml/EmojiPanel.qml</file>
     </qresource>
 </RCC>
