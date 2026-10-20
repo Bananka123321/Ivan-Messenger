@@ -27,6 +27,8 @@ public:
 
     std::string clientReadRaw(size_t max);
 
+    void dropClient();
+
 private:
     SSL_CTX* serverCtx_ = nullptr;
     SSL_CTX* clientCtx_ = nullptr;

@@ -104,3 +104,9 @@ std::string TlsPair::clientReadRaw(const size_t max) {
     buffer.resize(n > 0 ? static_cast<size_t>(n) : 0);
     return buffer;
 }
+
+void TlsPair::dropClient() {
+    SSL_free(client_);
+    client_ = nullptr;
+    clientBio_ = nullptr;
+}
