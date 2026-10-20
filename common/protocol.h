@@ -56,11 +56,11 @@ inline void to_json(nlohmann::json& j, const Message& m) {
 }
 
 inline void from_json(const nlohmann::json& j, Message& m) {
-    m.id = j.value("id", 0);
+    m.id = j.value("id", int64_t{0});
     m.dialog_id = j.value("dialog_id", 0);
     m.sender_id = j.value("sender_id", 0);
     m.type = static_cast<MessageType>(j.at("type").get<uint8_t>());
-    m.created_at_ms = j.value("timestamp", 0);
+    m.created_at_ms = j.value("timestamp", int64_t{0});
 
     const auto& payload_j = j.at("payload");
 
