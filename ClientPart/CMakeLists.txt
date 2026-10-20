@@ -74,6 +74,7 @@ qt_add_qml_module(Client
         qml/DesktopLayout.qml
         qml/MobileLayout.qml
         qml/ConnectionIndicator.qml
+        qml/ServerDialog.qml
     NO_PLUGIN
     SOURCES
     SOURCES

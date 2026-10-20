@@ -14,5 +14,6 @@
         <file>qml/AppMenu.qml</file>
         <file>qml/AppMenuItem.qml</file>
         <file>qml/ConfirmDialog.qml</file>
+        <file>qml/ServerDialog.qml</file>
     </qresource>
 </RCC>
