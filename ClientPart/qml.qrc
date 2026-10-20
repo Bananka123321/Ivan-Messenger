@@ -5,10 +5,14 @@
         <file>qml/RegisterScreen.qml</file>
         <file>qml/DesktopLayout.qml</file>
         <file>qml/MobileLayout.qml</file>
-        <file>qml/MobileLayout.qml</file>
         <file>qml/ChatList.qml</file>
         <file>qml/ChatView.qml</file>
         <file>qml/SearchPanel.qml</file>
         <file>qml/ConnectionIndicator.qml</file>
+        <file>qml/IconButton.qml</file>
+        <file>qml/Avatar.qml</file>
+        <file>qml/AppMenu.qml</file>
+        <file>qml/AppMenuItem.qml</file>
+        <file>qml/ConfirmDialog.qml</file>
     </qresource>
 </RCC>
