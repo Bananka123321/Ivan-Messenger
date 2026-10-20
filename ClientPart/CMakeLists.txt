@@ -148,3 +148,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug-sanitize" AND NOT ANDROID)
 
     endif()
 endif()
+
+option(BUILD_TESTS "Build unit, integration and contract tests" OFF)
+if(BUILD_TESTS AND NOT ANDROID)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
