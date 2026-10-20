@@ -104,7 +104,7 @@ void Handler::loginRequest(const std::shared_ptr<ClientSession>& client, const n
     auto [success, user_id, error] = userManager_.loginUser(username, j["password"]);
     if (!success) {
         LOG_WARNING(HANDLER, "Неудачная попытка входа. username='", username, "' причина: ", error);
-        dispatcher_.sendTo(client, protocol::loginResponse(false, user_id, username, "", error));
+        dispatcher_.sendTo(client, protocol::loginResponse(false, user_id, username, "", "", error));
         return;
     }
 
@@ -134,7 +134,7 @@ void Handler::registerRequest(const std::shared_ptr<ClientSession>& client, cons
     auto [success, user_id, error] = userManager_.registerUser(username, j["password"]);
     if (!success) {
         LOG_WARNING(HANDLER, "Неудачная попытка регистрации. username='", username, "' причина: ", error);
-        dispatcher_.sendTo(client, protocol::registerResponse(success, user_id, username, "", error));
+        dispatcher_.sendTo(client, protocol::registerResponse(false, user_id, username, "", "", error));
         return;
     }
 
