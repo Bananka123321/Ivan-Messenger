@@ -25,7 +25,7 @@ Handler::Handler() {
     };
 
     handlers_["historyResponse"] = [this] (const nlohmann::json& j) {
-        onHistoryResponse(j["success"], j["peer_id"], j["messages"], j.value("error", ""));
+        onHistoryResponse(j["success"], j["dialog_id"], j["messages"], j.value("error", ""));
     };
 
     handlers_["getDialogsResponse"] = [this] (const nlohmann::json& j) {
