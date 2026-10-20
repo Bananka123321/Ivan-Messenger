@@ -71,3 +71,4 @@ add_server_test(test_db_user_manager integration integration/test_db_user_manage
 add_server_test(test_db_tokens integration integration/test_db_tokens.cpp)
 add_server_test(test_db_dialogs_messages integration integration/test_db_dialogs_messages.cpp)
 add_server_test(test_handler_auth integration integration/test_handler_auth.cpp)
+add_server_test(test_handler_messaging integration integration/test_handler_messaging.cpp)
