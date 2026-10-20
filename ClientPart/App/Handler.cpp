@@ -5,39 +5,39 @@ Handler::Handler() {
     qCDebug(logHandler) << "Инициализация Handler. Регистрация обработчиков сообщений";
 
     handlers_["loginResponse"] = [this] (const nlohmann::json& j) {
-        onLoginResponse(j["success"], j["user_id"], j["username"], j["connectToken"], j["sessionToken"], j.value("error", ""));
+        onLoginResponse(j.at("success"), j.at("user_id"), j.at("username"), j.at("connectToken"), j.at("sessionToken"), j.value("error", ""));
     };
 
     handlers_["registerResponse"] = [this] (const nlohmann::json& j) {
-        onRegisterResponse(j["success"], j["user_id"], j["username"], j["connectToken"], j["sessionToken"], j.value("error", ""));
+        onRegisterResponse(j.at("success"), j.at("user_id"), j.at("username"), j.at("connectToken"), j.at("sessionToken"), j.value("error", ""));
     };
 
     handlers_["sendMessage"] = [this] (const nlohmann::json& j) {
-        onSendMessage(j["data"]);
+        onSendMessage(j.at("data"));
     };
 
     handlers_["searchUserResponse"] = [this] (const nlohmann::json& j) {
-        onSearchUserResponse(j["result"]);
+        onSearchUserResponse(j.at("result"));
     };
 
     handlers_["error"] = [this] (const nlohmann::json& j) {
-        onErrorMessage(j["message"]);
+        onErrorMessage(j.at("message"));
     };
 
     handlers_["historyResponse"] = [this] (const nlohmann::json& j) {
-        onHistoryResponse(j["success"], j["dialog_id"], j["messages"], j.value("error", ""));
+        onHistoryResponse(j.at("success"), j.at("dialog_id"), j.at("messages"), j.value("error", ""));
     };
 
     handlers_["getDialogsResponse"] = [this] (const nlohmann::json& j) {
-        onGetDialogsResponse(j["success"], j["dialogs"], j.value("error", ""));
+        onGetDialogsResponse(j.at("success"), j.at("dialogs"), j.value("error", ""));
     };
 
     handlers_["resumeConnectionResponse"] = [this] (const nlohmann::json& j) {
-        onResumeConnectionResponse(j["success"]);
+        onResumeConnectionResponse(j.at("success"));
     };
 
     handlers_["resumeSessionResponse"] = [this] (const nlohmann::json& j) {
-        onResumeSessionResponse(j["success"], j.value("token", ""));
+        onResumeSessionResponse(j.at("success"), j.value("token", ""));
     };
 
     handlers_["openDialogResponse"] = [this](const nlohmann::json& j) {
