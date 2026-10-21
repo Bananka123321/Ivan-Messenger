@@ -1,13 +1,14 @@
 #include "DB_TemporaryTokenManager.h"
 #include "../include/Logger.h"
 
-DB_TemporaryTokenManager::DB_TemporaryTokenManager(const std::string& conn_str) : conn_(conn_str) {
+DB_TemporaryTokenManager::DB_TemporaryTokenManager(DB_ConnectionPool& pool) : pool_(pool) {
     LOG_INFO(DB, "Инициализация DB_TemporaryTokenManager");
 };
 
 void DB_TemporaryTokenManager::createSession(int user_id, const std::string& token) {
     try {
-        pqxx::work txn(conn_);
+        auto conn = pool_.acquire();
+        pqxx::work txn(*conn);
         txn.exec("INSERT INTO connect_tokens (user_id, token) VALUES($1, $2);", pqxx::params(user_id, token));
         txn.commit();
 
@@ -19,7 +20,8 @@ void DB_TemporaryTokenManager::createSession(int user_id, const std::string& tok
 
 bool DB_TemporaryTokenManager::isValid(const std::string& token) {
     try {
-        pqxx::work txn(conn_);
+        auto conn = pool_.acquire();
+        pqxx::work txn(*conn);
         const auto result = txn.exec(
             "SELECT * FROM connect_tokens WHERE token = $1;", pqxx::params(token));
 
@@ -38,7 +40,8 @@ bool DB_TemporaryTokenManager::isValid(const std::string& token) {
 
 std::optional<int> DB_TemporaryTokenManager::getUserIdByToken(const std::string& token) {
     try {
-        pqxx::work txn(conn_);
+        auto conn = pool_.acquire();
+        pqxx::work txn(*conn);
         const auto res = txn.exec("SELECT user_id FROM connect_tokens WHERE token = $1;", pqxx::params(token));
         if(res.empty()) {
             LOG_DEBUG(DB, "Временный токен не найден при поиске userId. token=", token.substr(0, 8), "...");
@@ -55,7 +58,8 @@ std::optional<int> DB_TemporaryTokenManager::getUserIdByToken(const std::string&
 
 void DB_TemporaryTokenManager::deleteSession(const std::string& token) {
     try {
-        pqxx::work txn(conn_);
+        auto conn = pool_.acquire();
+        pqxx::work txn(*conn);
         const auto result = txn.exec("DELETE FROM connect_tokens WHERE token = $1;", pqxx::params(token));
         txn.commit();
 

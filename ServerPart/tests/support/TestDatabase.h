@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 
+#include "DB_ConnectionPool.h"
 #include "TempFile.h"
 
 namespace TestDatabase {
@@ -33,6 +34,8 @@ protected:
 
     pqxx::connection& db();
 
+    DB_ConnectionPool& pool();
+
     pqxx::result exec(const std::string& sql);
 
     int insertUser(const std::string& username);
@@ -40,4 +43,5 @@ protected:
 private:
     static inline std::string unavailableReason_;
     std::unique_ptr<pqxx::connection> db_;
+    std::unique_ptr<DB_ConnectionPool> pool_;
 };

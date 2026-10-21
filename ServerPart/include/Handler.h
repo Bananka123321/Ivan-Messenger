@@ -13,7 +13,7 @@
 
 class Handler {
 public:
-    explicit Handler(SessionManager& sm);
+    Handler(SessionManager& sm, DB_ConnectionPool& pool);
     ~Handler() = default;
 
     void handleMessage(const std::shared_ptr<ClientSession>& client, std::string_view msg);

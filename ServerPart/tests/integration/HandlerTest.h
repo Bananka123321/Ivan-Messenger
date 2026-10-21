@@ -35,7 +35,7 @@ protected:
 
         config_ = TestDatabase::makeServerConfig();
         ASSERT_EQ(Config::load(config_->path()), std::nullopt);
-        handler_ = std::make_unique<Handler>(sessions_);
+        handler_ = std::make_unique<Handler>(sessions_, pool());
     }
 
     void send(TestClient& client, const std::string& packet) {

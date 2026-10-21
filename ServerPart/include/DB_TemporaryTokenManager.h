@@ -2,11 +2,12 @@
 #include <string>
 #include <optional>
 #include <pqxx/pqxx>
+#include "DB_ConnectionPool.h"
 #include <iostream>
 
 class DB_TemporaryTokenManager {
 public:
-    explicit DB_TemporaryTokenManager(const std::string& conn_str);
+    explicit DB_TemporaryTokenManager(DB_ConnectionPool& pool);
 
     void createSession(int user_id, const std::string& token);
     std::optional<int> getUserIdByToken(const std::string& token);
@@ -14,5 +15,5 @@ public:
     bool isValid(const std::string& token);
 
 private:
-    pqxx::connection conn_;
+    DB_ConnectionPool& pool_;
 };

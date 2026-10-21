@@ -1,13 +1,14 @@
 #include "../include/DB_DialogManager.h"
 #include "../include/Logger.h"
 
-DB_DialogManager::DB_DialogManager(const std::string& conn_str) : conn_(conn_str) {
+DB_DialogManager::DB_DialogManager(DB_ConnectionPool& pool) : pool_(pool) {
     LOG_INFO(DB, "Инициализация DB_DialogManager");
 }
 
 void DB_DialogManager::upsertDialog(int user_id, int peer_id, int64_t msg_id, const std::string& preview, int64_t timestamp) {
     try {
-        pqxx::work txn(conn_);
+        auto conn = pool_.acquire();
+        pqxx::work txn(*conn);
 
         txn.exec(
             "INSERT INTO dialogs (user_id, peer_id, last_msg_id, last_msg_text, last_msg_timestamp, updated_at) "
@@ -30,7 +31,8 @@ void DB_DialogManager::upsertDialog(int user_id, int peer_id, int64_t msg_id, co
 
 void DB_DialogManager::updateLastMessage(const Message &msg) {
     try {
-        pqxx::work txn(conn_);
+        auto conn = pool_.acquire();
+        pqxx::work txn(*conn);
         txn.exec(
             "INSERT INTO dialog_last_message (dialog_id, last_msg_id, last_msg_text, last_msg_sender_id, last_msg_timestamp)"
             " VALUES ($1, $2, $3, $4, to_timestamp($5 / 1000.0))"
@@ -52,7 +54,8 @@ void DB_DialogManager::updateLastMessage(const Message &msg) {
 std::vector<MetaDialog_Client> DB_DialogManager::getUserDialogs(int user_id) {
     std::vector<MetaDialog_Client> result;
     try {
-        pqxx::work txn(conn_);
+        auto conn = pool_.acquire();
+        pqxx::work txn(*conn);
 
         const auto rows = txn.exec(
             "SELECT "
@@ -103,7 +106,8 @@ std::vector<MetaDialog_Client> DB_DialogManager::getUserDialogs(int user_id) {
 std::vector<int> DB_DialogManager::getDialogParticipants(int64_t dialog_id) {
     std::vector<int> result;
     try {
-        pqxx::work txn(conn_);
+        auto conn = pool_.acquire();
+        pqxx::work txn(*conn);
         const auto& rows = txn.exec(
             "SELECT user_id FROM dialog_participants"
             " WHERE dialog_id = $1",
@@ -123,7 +127,8 @@ std::vector<int> DB_DialogManager::getDialogParticipants(int64_t dialog_id) {
 
 std::optional<int64_t> DB_DialogManager::findOrCreatePrivateDialog(int user_a, int user_b) {
     try {
-        pqxx::work txn(conn_);
+        auto conn = pool_.acquire();
+        pqxx::work txn(*conn);
 
         txn.exec("SELECT pg_advisory_xact_lock($1, $2)",
                  pqxx::params(std::min(user_a, user_b), std::max(user_a, user_b)));

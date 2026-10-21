@@ -1,13 +1,14 @@
 #include "../include/DB_MessageManager.h"
 #include "../include/Logger.h"
 
-DB_MessageManager::DB_MessageManager(const std::string& conn_str) : conn_(conn_str) {
+DB_MessageManager::DB_MessageManager(DB_ConnectionPool& pool) : pool_(pool) {
     LOG_INFO(DB, "Инициализация DB_MessageManager");
 };
 
 std::optional<int64_t> DB_MessageManager::saveMessage(const Message& message) {
     try {
-        pqxx::work txn(conn_);
+        auto conn = pool_.acquire();
+        pqxx::work txn(*conn);
 
         std::string payload_json = serializePayload(message.payload);
         const auto result = txn.exec(
@@ -30,7 +31,8 @@ std::optional<int64_t> DB_MessageManager::saveMessage(const Message& message) {
 std::vector<Message> DB_MessageManager::getHistory(int64_t dialog_id, int64_t before_id, int limit) {
     std::vector<Message> result;
     try {
-        pqxx::work txn(conn_);
+        auto conn = pool_.acquire();
+        pqxx::work txn(*conn);
         const auto rows = txn.exec(
         "SELECT id, dialog_id, sender_id, type, "
         "(EXTRACT(EPOCH FROM created_at) * 1000)::bigint as timestamp_ms, "

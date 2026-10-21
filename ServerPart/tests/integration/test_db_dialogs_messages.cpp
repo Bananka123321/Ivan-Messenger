@@ -34,8 +34,8 @@ protected:
         DatabaseTest::SetUp();
         if (IsSkipped() || HasFailure())
             return;
-        dialogs_ = std::make_unique<DB_DialogManager>(TestDatabase::connectionString());
-        messages_ = std::make_unique<DB_MessageManager>(TestDatabase::connectionString());
+        dialogs_ = std::make_unique<DB_DialogManager>(pool());
+        messages_ = std::make_unique<DB_MessageManager>(pool());
         ivan_ = insertUser("ivan");
         masha_ = insertUser("masha");
     }
@@ -98,9 +98,8 @@ TEST_F(DBDialogsMessagesTest, ConcurrentOpeningCreatesSingleDialog) {
 
     for (int i = 0; i < kThreads; ++i) {
         threads.emplace_back([&, i] {
-            DB_DialogManager manager(TestDatabase::connectionString());
-            results[i] = i % 2 ? manager.findOrCreatePrivateDialog(ivan_, masha_)
-                               : manager.findOrCreatePrivateDialog(masha_, ivan_);
+            results[i] = i % 2 ? dialogs().findOrCreatePrivateDialog(ivan_, masha_)
+                               : dialogs().findOrCreatePrivateDialog(masha_, ivan_);
         });
     }
     for (auto& t : threads)

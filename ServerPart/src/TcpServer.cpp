@@ -5,8 +5,9 @@
 #include <arpa/inet.h>
 
 TcpServer::TcpServer(const int port)
-    : port_(port), serverSocket_(-1), ssl_ctx_(nullptr), sessionManager_(),
-      handler_(sessionManager_), temporaryTokenManager_(Config::getDB().getConnectionStr())
+    : port_(port), serverSocket_(-1), ssl_ctx_(nullptr),
+      dbPool_(Config::getDB().getConnectionStr(), Config::getDB().pool_size), sessionManager_(),
+      handler_(sessionManager_, dbPool_), temporaryTokenManager_(dbPool_)
 {
     LOG_INFO(MAIN, "Инициализация TcpServer на порту ", port_);
 

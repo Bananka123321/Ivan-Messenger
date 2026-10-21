@@ -28,6 +28,7 @@ private:
 
     std::thread monitor_thread_;
 
+    DB_ConnectionPool dbPool_;
     SessionManager sessionManager_;
     Handler handler_;
     DB_TemporaryTokenManager temporaryTokenManager_;

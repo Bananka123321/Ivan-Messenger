@@ -18,7 +18,7 @@ protected:
 
 TEST_F(ConfigTest, LoadsFullConfig) {
     const TempFile file(R"({
-        "database": {"name": "chat_db", "user": "ivan", "password": "pw", "host": "db.local", "port": 6543, "timeout": 3},
+        "database": {"name": "chat_db", "user": "ivan", "password": "pw", "host": "db.local", "port": 6543, "timeout": 3, "pool_size": 4},
         "server": {"port": 7000, "max_connections": 5}
     })");
 
@@ -31,6 +31,7 @@ TEST_F(ConfigTest, LoadsFullConfig) {
     EXPECT_EQ(db.host, "db.local");
     EXPECT_EQ(db.port, 6543);
     EXPECT_EQ(db.timeout, 3);
+    EXPECT_EQ(db.pool_size, 4);
 
     EXPECT_EQ(Config::getServer().port, 7000);
     EXPECT_EQ(Config::getServer().max_connections, 5);
@@ -43,6 +44,7 @@ TEST_F(ConfigTest, AppliesDefaultsForOptionalFields) {
 
     EXPECT_EQ(Config::getDB().port, 5432);
     EXPECT_EQ(Config::getDB().timeout, 10);
+    EXPECT_EQ(Config::getDB().pool_size, 8);
     EXPECT_EQ(Config::getServer().port, 6767);
     EXPECT_EQ(Config::getServer().max_connections, 100);
 }

@@ -89,10 +89,15 @@ void DatabaseTest::SetUp() {
     }
     TestDatabase::truncateAll();
     db_ = std::make_unique<pqxx::connection>(TestDatabase::connectionString());
+    pool_ = std::make_unique<DB_ConnectionPool>(TestDatabase::connectionString(), 4);
 }
 
 pqxx::connection& DatabaseTest::db() {
     return *db_;
+}
+
+DB_ConnectionPool& DatabaseTest::pool() {
+    return *pool_;
 }
 
 pqxx::result DatabaseTest::exec(const std::string& sql) {

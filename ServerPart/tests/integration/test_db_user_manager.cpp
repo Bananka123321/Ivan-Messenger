@@ -12,7 +12,7 @@ protected:
         DatabaseTest::SetUp();
         if (IsSkipped() || HasFailure())
             return;
-        users_ = std::make_unique<DB_UserManager>(TestDatabase::connectionString());
+        users_ = std::make_unique<DB_UserManager>(pool());
     }
 
     DB_UserManager& users() { return *users_; }

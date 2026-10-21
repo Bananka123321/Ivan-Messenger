@@ -1,12 +1,12 @@
 #include "../include/Handler.h"
 #include "../include/Logger.h"
 
-Handler::Handler(SessionManager& sm)
-    : userManager_(Config::getDB().getConnectionStr()),
-      messageManager_(Config::getDB().getConnectionStr()),
-      dialogManager_(Config::getDB().getConnectionStr()),
-      devicesSessionManager_(Config::getDB().getConnectionStr()),
-      temporaryTokenManager_(Config::getDB().getConnectionStr()),
+Handler::Handler(SessionManager& sm, DB_ConnectionPool& pool)
+    : userManager_(pool),
+      messageManager_(pool),
+      dialogManager_(pool),
+      devicesSessionManager_(pool),
+      temporaryTokenManager_(pool),
       sessionManager_(sm),
       dispatcher_(sessionManager_)
 {

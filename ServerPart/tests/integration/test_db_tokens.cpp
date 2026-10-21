@@ -13,7 +13,7 @@ protected:
         DatabaseTest::SetUp();
         if (IsSkipped() || HasFailure())
             return;
-        sessions_ = std::make_unique<DB_DevicesSessionManager>(TestDatabase::connectionString());
+        sessions_ = std::make_unique<DB_DevicesSessionManager>(pool());
         userId_ = insertUser("ivan");
     }
 
@@ -129,7 +129,7 @@ protected:
         DatabaseTest::SetUp();
         if (IsSkipped() || HasFailure())
             return;
-        tokens_ = std::make_unique<DB_TemporaryTokenManager>(TestDatabase::connectionString());
+        tokens_ = std::make_unique<DB_TemporaryTokenManager>(pool());
         userId_ = insertUser("ivan");
     }
 
