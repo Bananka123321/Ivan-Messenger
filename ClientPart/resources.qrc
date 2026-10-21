@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/">
         <file>styles/style.qss</file>
+        <file alias="certs/server.crt">../ServerPart/server.crt</file>
     </qresource>
 </RCC>

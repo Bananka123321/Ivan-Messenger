@@ -32,6 +32,8 @@ public:
 
     static QByteArray frame(const std::string& payload);
 
+    static QSslCertificate certificate();
+
 private:
     void onReadyRead();
 

@@ -20,7 +20,7 @@ QByteArray readFile(const char* path) {
 
 FakeServer::FakeServer() {
     QSslConfiguration config = QSslConfiguration::defaultConfiguration();
-    config.setLocalCertificate(QSslCertificate(readFile(TEST_CERT_FILE), QSsl::Pem));
+    config.setLocalCertificate(certificate());
     config.setPrivateKey(QSslKey(readFile(TEST_KEY_FILE), QSsl::Rsa, QSsl::Pem));
     config.setPeerVerifyMode(QSslSocket::VerifyNone);
     server_.setSslConfiguration(config);
@@ -108,4 +108,8 @@ void FakeServer::onReadyRead() {
     buffer_.append(client_->readAll());
     while (auto packet = PacketIO_Client::extractPacket(buffer_))
         received_.push_back(nlohmann::json::parse(*packet));
+}
+
+QSslCertificate FakeServer::certificate() {
+    return QSslCertificate(readFile(TEST_CERT_FILE), QSsl::Pem);
 }

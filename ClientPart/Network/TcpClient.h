@@ -22,6 +22,7 @@ public:
     void disconnect();
     bool isConnected() const;
     void setServer(const QString& host, int port);
+    void setTrustedCertificates(const QList<QSslCertificate>& certificates);
 
     std::function<void(const std::string&)> onMessage;
 
@@ -48,9 +49,12 @@ private:
     QTimer* reconnectTimer_ = nullptr;
     int reconnectDelay_ = 1000;
 
+    QList<QSslCertificate> trustedCertificates_;
+
     static constexpr int32_t MAX_RECONNECT_TIME_MS = 30000;
 
 private:
     bool setupSocket();
     void reconnect();
+    bool isTrusted(const QSslCertificate& certificate) const;
 };

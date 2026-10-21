@@ -35,6 +35,7 @@ target_link_libraries(client_test_support PUBLIC client_core Qt6::Test GTest::gt
 target_compile_definitions(client_test_support PUBLIC
     TEST_CERT_FILE="${TEST_DATA_DIR}/test.crt"
     TEST_KEY_FILE="${TEST_DATA_DIR}/test.key"
+    SERVER_CERT_FILE="${CMAKE_CURRENT_SOURCE_DIR}/../../ServerPart/server.crt"
     CONTRACT_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../tests/contract"
 )
 

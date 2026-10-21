@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <QSignalSpy>
+#include <QSslKey>
 #include <QTest>
 
 #include "FakeServer.h"
@@ -11,6 +12,7 @@ using nlohmann::json;
 class NetworkTest : public testing::Test {
 protected:
     void SetUp() override {
+        client_.setTrustedCertificates({FakeServer::certificate()});
         client_.onMessage = [this](const std::string& packet) { received_.push_back(json::parse(packet)); };
     }
 
@@ -34,6 +36,30 @@ TEST_F(NetworkTest, ConnectsOverTls) {
 
     EXPECT_EQ(connecting.count(), 1);
     EXPECT_TRUE(client_.isConnected());
+}
+
+TEST_F(NetworkTest, RejectsServerWithUntrustedCertificate) {
+    TCPClient stranger{"127.0.0.1", server_.port(), &router_};
+    QSignalSpy connected(&stranger, &TCPClient::connected);
+
+    stranger.start();
+
+    EXPECT_FALSE(QTest::qWaitFor([&] { return connected.count() > 0; }, 1500));
+    EXPECT_FALSE(stranger.isConnected());
+}
+
+TEST_F(NetworkTest, RejectsServerWhoseKeyDiffersFromPinned) {
+    const auto others = QSslCertificate::fromPath(QStringLiteral(SERVER_CERT_FILE));
+    ASSERT_EQ(others.size(), 1);
+    ASSERT_NE(others.front().publicKey().toDer(), FakeServer::certificate().publicKey().toDer());
+
+    TCPClient pinnedElsewhere{"127.0.0.1", server_.port(), &router_};
+    pinnedElsewhere.setTrustedCertificates(others);
+    QSignalSpy connected(&pinnedElsewhere, &TCPClient::connected);
+
+    pinnedElsewhere.start();
+
+    EXPECT_FALSE(QTest::qWaitFor([&] { return connected.count() > 0; }, 1500));
 }
 
 TEST_F(NetworkTest, RouterSendsFramedRequests) {

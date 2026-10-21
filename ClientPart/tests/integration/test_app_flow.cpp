@@ -43,6 +43,7 @@ protected:
 
         state_ = std::make_unique<AppState>();
         client_ = std::make_unique<TCPClient>("127.0.0.1", server_.port(), &router_);
+        client_->setTrustedCertificates({FakeServer::certificate()});
         dialogs_ = std::make_unique<DialogManager>(&handler_, state_.get());
         controller_ = std::make_unique<AppController>(&router_, state_.get(), &handler_, client_.get(), dialogs_.get());
 
