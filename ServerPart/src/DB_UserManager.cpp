@@ -1,10 +1,11 @@
 #include "../include/DB_UserManager.h"
 
-DB_UserManager::DB_UserManager(const std::string& conn_str)  : conn_(conn_str) {};
+DB_UserManager::DB_UserManager(DB_ConnectionPool& pool) : pool_(pool) {};
 
 bool DB_UserManager::bUsernameAvailable(const std::string& username) {
     try {
-        pqxx::work txn(conn_);
+        auto conn = pool_.acquire();
+        pqxx::work txn(*conn);
         const pqxx::result r = txn.exec("SELECT id FROM users WHERE username = " + txn.quote(username));
         return r.empty();
     } catch(const std::exception& e) {
@@ -20,7 +21,8 @@ DB_UserManager::AuthResult DB_UserManager::registerUser(const std::string& usern
 
     const std::string hashed = hashPassword(password);
     try {
-        pqxx::work txn(conn_);
+        auto conn = pool_.acquire();
+        pqxx::work txn(*conn);
         const pqxx::result r = txn.exec("INSERT INTO users(username, password_hash) VALUES (" + txn.quote(username) + ", " + txn.quote(hashed) + ") RETURNING id");
         txn.commit();
         return {.success = true, .user_id = r[0]["id"].as<int>(), .error = ""};
@@ -32,7 +34,8 @@ DB_UserManager::AuthResult DB_UserManager::registerUser(const std::string& usern
 
 DB_UserManager::AuthResult DB_UserManager::loginUser(const std::string& username, const std::string& password) {
     try {
-        pqxx::work txn(conn_);
+        auto conn = pool_.acquire();
+        pqxx::work txn(*conn);
         const pqxx::result r = txn.exec("SELECT id, password_hash FROM users WHERE username = " + txn.quote(username));
         if (r.empty()) return {.success = false, .user_id = -1, .error = "User not found"};
 
@@ -73,7 +76,8 @@ std::string DB_UserManager::hashPassword(const std::string& password) {
 std::vector<User> DB_UserManager::searchUsers(const std::string& query) {
     try {
         std::vector<User> result;
-        pqxx::work txn(conn_);
+        auto conn = pool_.acquire();
+        pqxx::work txn(*conn);
 
         for (const pqxx::result r = txn.exec("SELECT id, username FROM users WHERE username LIKE " + txn.quote(query + "%") + " LIMIT 20"); const auto& row : r)
             result.push_back({.username = row["username"].c_str(), .user_id = row["id"].as<int>()});
@@ -88,7 +92,8 @@ std::vector<User> DB_UserManager::searchUsers(const std::string& query) {
 
 std::optional<std::string> DB_UserManager::getUsername(int user_id) {
     try {
-        pqxx::work txn(conn_);
+        auto conn = pool_.acquire();
+        pqxx::work txn(*conn);
         const auto result = txn.exec("SELECT username FROM users WHERE id = $1;", pqxx::params(user_id));
         if (result.empty()) return std::nullopt;
         return result[0]["username"].as<std::string>();

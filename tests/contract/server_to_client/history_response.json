@@ -1,0 +1,28 @@
+{
+  "type": "historyResponse",
+  "success": true,
+  "dialog_id": 15,
+  "messages": [
+    {
+      "id": 5000000001,
+      "dialog_id": 15,
+      "sender_id": 3,
+      "type": 0,
+      "timestamp": 1760968800123,
+      "payload": {
+        "text": "второе"
+      }
+    },
+    {
+      "id": 5000000000,
+      "dialog_id": 15,
+      "sender_id": 7,
+      "type": 0,
+      "timestamp": 1760968800123,
+      "payload": {
+        "text": "первое"
+      }
+    }
+  ],
+  "error": ""
+}

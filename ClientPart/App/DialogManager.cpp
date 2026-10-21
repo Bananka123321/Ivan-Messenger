@@ -1,6 +1,7 @@
 #include "DialogManager.h"
 #include "Logging.h"
 #include <QTimer>
+#include <QDateTime>
 
 DialogManager::DialogManager(Handler* handler, AppState* state) : handler_(handler), state_(state) {
     qCDebug(logDialog) << "Инициализация DialogManager";
@@ -34,13 +35,16 @@ void DialogManager::start() {
 void DialogManager::addMessage(int64_t dialog_id, const Message& msg) {
     bool needUpdateMessages = false;
     bool needUpdateDialogs = false;
+    bool isUnknown = false;
 
     {
         QMutexLocker locker(&mtx_);
 
+        isUnknown = !data_.contains(dialog_id);
         auto& dialog_data = data_[dialog_id];
+        dialog_data.meta.dialog_id = dialog_id;
 
-        bool exists = std::any_of(
+        bool exists = msg.id != 0 && std::any_of(
             dialog_data.messages.begin(),
             dialog_data.messages.end(),
             [&msg](const Message& m) { return m.id == msg.id; }
@@ -67,6 +71,9 @@ void DialogManager::addMessage(int64_t dialog_id, const Message& msg) {
 
     if (needUpdateMessages)
         emit messagesUpdated(dialog_id);
+
+    if (isUnknown)
+        emit unknownDialog(dialog_id);
 }
 
 const std::vector<Message>* DialogManager::getMessages(int64_t dialog_id) const {
@@ -157,11 +164,76 @@ void DialogManager::dialogsLoaded(const std::vector<MetaDialog_Client>& dialogs)
             users[d.peer_id] = d.username;
         }
 
-        qCInfo(logDialog) << "Список диалогов загружен в кэш. Диалогов:" << dialogs.size()
-                          << "уникальных пользователей:" << users.size();
+        qCInfo(logDialog) << "Список диалогов загружен в кэш. Диалогов:" << dialogs.size() << "уникальных пользователей:" << users.size();
 
         state_->setUsers(users);
     }
 
     emit dialogsUpdated();
+}
+
+void DialogManager::setCurrentDialog(int64_t dialog_id, const User& peer, const std::vector<Message>& messages) {
+    {
+        QMutexLocker locker(&mtx_);
+        auto& dialog = data_[dialog_id];
+
+        dialog.meta.dialog_id = dialog_id;
+        dialog.meta.peer_id = peer.user_id;
+        dialog.meta.username = peer.username;
+
+        if (!messages.empty()) {
+            dialog.messages = messages;
+            dialog.meta.last_msg_preview = messages.back().getPreview();
+            dialog.meta.last_msg_timestamp = messages.back().created_at_ms;
+        } else {
+            dialog.messages.clear();
+            dialog.meta.last_msg_preview = "Начните общение...";
+            dialog.meta.last_msg_timestamp = now();
+        }
+    }
+
+    qCInfo(logDialog) << "Установлен текущий диалог:" << dialog_id
+                      << "с пользователем:" << QString::fromStdString(peer.username)
+                      << "загружено сообщений:" << messages.size();
+
+    emit currentDialogChanged(dialog_id);
+    emit dialogsUpdated();
+}
+
+QVariantList DialogManager::messagesForQml(qint64 dialogId) const {
+    QVariantList result;
+    const int myId = state_->getCurrentUserId();
+
+    QMutexLocker locker(&mtx_);
+    auto it = data_.find(dialogId);
+    if (it == data_.end())
+        return result;
+
+    const auto& messages = it->second.messages;
+    result.reserve(static_cast<qsizetype>(messages.size()));
+
+    for (auto rit = messages.rbegin(); rit != messages.rend(); ++rit) {
+        QVariantMap m;
+        m["msgId"] = static_cast<qlonglong>(rit->id);
+        m["messageText"] = QString::fromStdString(rit->getPreview());
+        m["isMine"] = rit->sender_id == myId;
+        m["timestamp"] = static_cast<qlonglong>(rit->created_at_ms);
+        result.append(m);
+    }
+    return result;
+}
+
+QVariantList DialogManager::dialogsForQml() const {
+    QVariantList result;
+
+    for (const auto& d : getDialogs()) {
+        QVariantMap m;
+        m["chatId"] = static_cast<qlonglong>(d.dialog_id);
+        m["peerId"] = d.peer_id;
+        m["name"] = QString::fromStdString(d.username);
+        m["lastMsg"] = QString::fromStdString(d.last_msg_preview);
+        m["time"] = d.last_msg_timestamp > 0 ? QDateTime::fromMSecsSinceEpoch(d.last_msg_timestamp).toString("hh:mm") : QString();
+        result.append(m);
+    }
+    return result;
 }

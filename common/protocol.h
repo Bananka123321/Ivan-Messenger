@@ -56,11 +56,11 @@ inline void to_json(nlohmann::json& j, const Message& m) {
 }
 
 inline void from_json(const nlohmann::json& j, Message& m) {
-    m.id = j.value("id", 0);
+    m.id = j.value("id", int64_t{0});
     m.dialog_id = j.value("dialog_id", 0);
     m.sender_id = j.value("sender_id", 0);
     m.type = static_cast<MessageType>(j.at("type").get<uint8_t>());
-    m.created_at_ms = j.value("timestamp", 0);
+    m.created_at_ms = j.value("timestamp", int64_t{0});
 
     const auto& payload_j = j.at("payload");
 
@@ -90,6 +90,7 @@ inline void from_json(const nlohmann::json& j, Message& m) {
 
 inline void to_json(nlohmann::json& j, const MetaDialog_Client& md) {
     j = {
+        {"dialog_id", md.dialog_id},
         {"peer_id", md.peer_id},
         {"username", md.username},
         {"last_msg_preview", md.last_msg_preview},
@@ -98,6 +99,7 @@ inline void to_json(nlohmann::json& j, const MetaDialog_Client& md) {
 }
 
 inline void from_json(const nlohmann::json& j, MetaDialog_Client& md) {
+    j.at("dialog_id").get_to(md.dialog_id);
     j.at("peer_id").get_to(md.peer_id);
     j.at("username").get_to(md.username);
     j.at("last_msg_preview").get_to(md.last_msg_preview);
@@ -105,6 +107,8 @@ inline void from_json(const nlohmann::json& j, MetaDialog_Client& md) {
 }
 
 namespace protocol {
+
+constexpr int HISTORY_MAX_LIMIT = 100;
 
     
 //      CHAT
@@ -177,6 +181,13 @@ inline std::string resumeSessionRequest(const std::string& token) {
     nlohmann::json j;
     j["type"] = "resumeSessionRequest";
     j["token"] = token;
+    return j.dump();
+}
+
+inline std::string openDialogRequest(int64_t target_user_id) {
+    nlohmann::json j;
+    j["type"] = "openDialogRequest";
+    j["target_user_id"] = target_user_id;
     return j.dump();
 }
 
@@ -259,6 +270,22 @@ inline std::string resumeSessionResponse(bool success, const std::string& token 
     j["type"] = "resumeSessionResponse";
     j["success"] = success;
     j["token"] = token;
+    return j.dump();
+}
+
+inline std::string openDialogResponse(bool success, int64_t dialog_id, const User& peer, const std::vector<Message>& messages, const std::string& reason = "") {
+    nlohmann::json j;
+    j["type"] = "openDialogResponse";
+    j["success"] = success;
+
+    if (success) {
+        j["dialog_id"] = dialog_id;
+        j["peer"] = peer;
+        j["messages"] = messages;
+    } else {
+        j["error"] = reason;
+    }
+
     return j.dump();
 }
 

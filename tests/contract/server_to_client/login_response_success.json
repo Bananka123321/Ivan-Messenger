@@ -1,0 +1,9 @@
+{
+  "type": "loginResponse",
+  "success": true,
+  "user_id": 7,
+  "username": "ivan",
+  "connectToken": "0123456789abcdef0123456789abcdef",
+  "sessionToken": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  "error": ""
+}

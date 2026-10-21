@@ -5,39 +5,47 @@ Handler::Handler() {
     qCDebug(logHandler) << "Инициализация Handler. Регистрация обработчиков сообщений";
 
     handlers_["loginResponse"] = [this] (const nlohmann::json& j) {
-        onLoginResponse(j["success"], j["user_id"], j["username"], j["connectToken"], j["sessionToken"], j.value("error", ""));
+        onLoginResponse(j.at("success"), j.at("user_id"), j.at("username"), j.at("connectToken"), j.at("sessionToken"), j.value("error", ""));
     };
 
     handlers_["registerResponse"] = [this] (const nlohmann::json& j) {
-        onRegisterResponse(j["success"], j["user_id"], j["username"], j["connectToken"], j["sessionToken"], j.value("error", ""));
+        onRegisterResponse(j.at("success"), j.at("user_id"), j.at("username"), j.at("connectToken"), j.at("sessionToken"), j.value("error", ""));
     };
 
     handlers_["sendMessage"] = [this] (const nlohmann::json& j) {
-        onSendMessage(j["data"]);
+        onSendMessage(j.at("data"));
     };
 
     handlers_["searchUserResponse"] = [this] (const nlohmann::json& j) {
-        onSearchUserResponse(j["result"]);
+        onSearchUserResponse(j.at("result"));
     };
 
     handlers_["error"] = [this] (const nlohmann::json& j) {
-        onErrorMessage(j["message"]);
+        onErrorMessage(j.at("message"));
     };
 
     handlers_["historyResponse"] = [this] (const nlohmann::json& j) {
-        onHistoryResponse(j["success"], j["peer_id"], j["messages"], j.value("error", ""));
+        onHistoryResponse(j.at("success"), j.at("dialog_id"), j.at("messages"), j.value("error", ""));
     };
 
     handlers_["getDialogsResponse"] = [this] (const nlohmann::json& j) {
-        onGetDialogsResponse(j["success"], j["dialogs"], j.value("error", ""));
+        onGetDialogsResponse(j.at("success"), j.at("dialogs"), j.value("error", ""));
     };
 
     handlers_["resumeConnectionResponse"] = [this] (const nlohmann::json& j) {
-        onResumeConnectionResponse(j["success"]);
+        onResumeConnectionResponse(j.at("success"));
     };
 
     handlers_["resumeSessionResponse"] = [this] (const nlohmann::json& j) {
-        onResumeSessionResponse(j["success"], j.value("token", ""));
+        onResumeSessionResponse(j.at("success"), j.value("token", ""));
+    };
+
+    handlers_["openDialogResponse"] = [this](const nlohmann::json& j) {
+        if (!j.value("success", false)) {
+            onOpenDialogResponse(false, 0, User{}, {}, j.value("error", "Unknown error"));
+            return;
+        }
+        onOpenDialogResponse(true, j.at("dialog_id").get<int64_t>(), j.at("peer").get<User>(), j.at("messages").get<std::vector<Message>>(), "");
     };
 }
 
@@ -132,4 +140,12 @@ void Handler::onResumeSessionResponse(const bool success, const std::string& tok
         qCWarning(logAuth) << "Ответ сервера: Ошибка восстановления сессии";
     }
     emit S_ResumeSessionResponse(success, token);
+}
+
+void Handler::onOpenDialogResponse(bool success, int64_t dialog_id, const User& peer, const std::vector<Message>& messages, const std::string& error) {
+    if (success) {
+        emit S_DialogOpened(true, dialog_id, peer, messages, "");
+    } else {
+        emit S_DialogOpened(false, 0, User{}, {}, error);
+    }
 }

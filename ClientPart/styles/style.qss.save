@@ -116,4 +116,3 @@ QTextEdit#chatView {
 
 /* Убираем стандартные отступы параграфов внутри QTextEdit */
 QTextEdit#chatView    padding: 0;
-

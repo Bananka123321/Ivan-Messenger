@@ -12,6 +12,7 @@
 
 class DialogManager : public QObject{
     Q_OBJECT
+    Q_PROPERTY(QVariantList dialogs READ dialogsForQml NOTIFY dialogsUpdated)
 
 public:
     DialogManager(Handler* handler, AppState* state);
@@ -25,11 +26,18 @@ public:
     void dialogsLoaded(const std::vector<MetaDialog_Client>& dialogs);
     std::vector<MetaDialog_Client> getDialogs() const;
 
+    void setCurrentDialog(int64_t dialog_id, const User& peer, const std::vector<Message>& messages);
+
+    Q_INVOKABLE QVariantList messagesForQml(qint64 dialogId) const;
+    QVariantList dialogsForQml() const;
+
 signals:
-    void messagesUpdated(int64_t dialog_id);
+    void messagesUpdated(qint64 dialogId);
     void historyLoaded(int64_t dialog_id, const std::vector<Message>& batch);
     void findUsers(const std::vector<User>& users);
     void dialogsUpdated();
+    void currentDialogChanged(int64_t dialog_id);
+    void unknownDialog(int64_t dialog_id);
 
 private:
     mutable QMutex mtx_;

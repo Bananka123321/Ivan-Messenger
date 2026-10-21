@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 
 Item {
@@ -9,12 +10,13 @@ Item {
         ChatList {
             Layout.preferredWidth: 320
             Layout.fillHeight: true
+            onMenuRequested: drawer.open()
+        }
 
-            onChatClicked: function (chatId, chatName) {
-                console.log("Выбран чат:", chatName);
-                chatView.currentChatId = chatId;
-                chatView.currentChatName = chatName;
-            }
+        Rectangle {
+            Layout.preferredWidth: 1
+            Layout.fillHeight: true
+            color: "#2C2C30"
         }
 
         ChatView {
@@ -23,11 +25,41 @@ Item {
             Layout.fillHeight: true
             isMobile: false
         }
+    }
 
-        ConnectionIndicator {
-            anchors.top: parent.top
-            anchors.right: parent.right
-            anchors.margins: 16
+    SideDrawer {
+        id: drawer
+        onSettingsRequested: settingsPopup.open()
+    }
+
+    Popup {
+        id: settingsPopup
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+        width: Math.min(parent.width - 32, 480)
+        height: Math.min(parent.height - 32, 640)
+        modal: true
+        padding: 0
+
+        background: Rectangle {
+            color: "#18181B"
+            radius: 12
+            border.color: "#3F3F46"
+            border.width: 1
+        }
+
+        SettingsPage {
+            anchors.fill: parent
+            anchors.margins: 1
+            isMobile: false
+            onBackRequested: settingsPopup.close()
+        }
+    }
+
+    Connections {
+        target: appController
+        function onDialogOpenedSuccessfully(dialogId, peerName) {
+            chatView.openChat(dialogId, peerName);
         }
     }
 }

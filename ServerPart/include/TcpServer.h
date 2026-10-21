@@ -28,12 +28,14 @@ private:
 
     std::thread monitor_thread_;
 
+    DB_ConnectionPool dbPool_;
     SessionManager sessionManager_;
     Handler handler_;
     DB_TemporaryTokenManager temporaryTokenManager_;
 
     static constexpr int64_t HEARTBEAT_INTERVAL_MS = 30000;
     static constexpr int64_t SESSION_TIMEOUT_MS = 90000;
+    static constexpr int HANDSHAKE_TIMEOUT_MS = 10000;
 
     friend class MessageDispatcher;
 

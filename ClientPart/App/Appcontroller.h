@@ -9,16 +9,19 @@
 #include "AppState.h"
 #include "Handler.h"
 #include "TcpClient.h"
+#include "DialogManager.h"
 
 class AppController : public QObject {
     Q_OBJECT
 
 public:
-    AppController(Router* router, AppState* state, Handler* handler, TCPClient* client);
+    AppController(Router* router, AppState* state, Handler* handler, TCPClient* client, DialogManager* dialogManager);
     ~AppController();
 
     Q_INVOKABLE void checkAndResumeSession();
     Q_INVOKABLE bool changeServer(const QString& host, int port);
+    Q_INVOKABLE void openDialog(qint64 target_user_id);
+    Q_INVOKABLE void sendText(qint64 dialog_id, const QString& text);
 
 public slots:
     void loginRequest(const std::string& login, const std::string& password);
@@ -32,12 +35,15 @@ public slots:
 
 signals:
     void resumeSessionFinished(bool success);
+    void dialogOpenedSuccessfully(qint64 dialogId, const QString& peerName);
+    void dialogOpenFailed(const QString error);
 
 private:
     TCPClient* client_;
     Handler* handler_;
     Router* router_;
     AppState* state_;
+    DialogManager* dialogManager_;
 
     QTimer* pingTimer = nullptr;
     bool pendingResumeSession_ = false;

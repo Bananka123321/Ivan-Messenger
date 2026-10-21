@@ -29,6 +29,11 @@ void SearchViewModel::searchUser(const QString& username) {
     router_->searchUser(username.toStdString());
 }
 
+void SearchViewModel::selectUser(qint64 user_id) {
+    qCInfo(logDialog) << "Пользователь выбран для открытия диалога. user_id:" << user_id;
+    emit userSelectedForDialog(user_id);
+}
+
 void SearchViewModel::onUserSearchResults(const std::vector<User>& users) {
     qCInfo(logDialog) << "Получены результаты поиска. Найдено пользователей:" << users.size();
 

@@ -52,6 +52,21 @@ ApplicationWindow {
         authStackView.replace(mainLayoutComponent);
     }
 
+    function todo(feature) {
+        showToast(feature + ": скоро будет");
+    }
+
+    function showToast(text) {
+        toastText.text = text;
+        toast.open();
+        toastTimer.restart();
+    }
+
+    function logout() {
+        appState.clearSession();
+        showLogin();
+    }
+
     function showLogin() {
         shouldShowLogin = true;
         if (authStackView.currentItem !== loginScreenComponent) {
@@ -77,6 +92,54 @@ ApplicationWindow {
                     loadMainLayout();
                 }
             }
+        }
+    }
+
+    Popup {
+        id: toast
+        parent: Overlay.overlay
+        x: (parent.width - width) / 2
+        y: parent.height - height - 96
+        width: Math.min(implicitWidth, parent.width - 32)
+        padding: 12
+        leftPadding: 16
+        rightPadding: 16
+        closePolicy: Popup.NoAutoClose
+
+        background: Rectangle {
+            color: "#3F3F46"
+            radius: 10
+        }
+
+        contentItem: Text {
+            id: toastText
+            color: "#F4F4F5"
+            font.pixelSize: 14
+            wrapMode: Text.Wrap
+            horizontalAlignment: Text.AlignHCenter
+        }
+
+        enter: Transition {
+            NumberAnimation {
+                property: "opacity"
+                from: 0
+                to: 1
+                duration: 150
+            }
+        }
+        exit: Transition {
+            NumberAnimation {
+                property: "opacity"
+                from: 1
+                to: 0
+                duration: 150
+            }
+        }
+
+        Timer {
+            id: toastTimer
+            interval: 2200
+            onTriggered: toast.close()
         }
     }
 }

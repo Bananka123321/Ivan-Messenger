@@ -132,8 +132,8 @@ int main(int argc, char *argv[]) {
     auto router = std::make_unique<Router>();
     auto handler = std::make_unique<Handler>();
     auto client = std::make_unique<TCPClient>(state->getServerHost(), state->getServerPort(), router.get());
-    auto appController = std::make_unique<AppController>(router.get(), state.get(), handler.get(), client.get());
     auto dialogManager = std::make_unique<DialogManager>(handler.get(), state.get());
+    auto appController = std::make_unique<AppController>(router.get(), state.get(), handler.get(), client.get(), dialogManager.get());
 
     qCInfo(logMain) << "Настройка обработчика входящих сообщений";
     client->onMessage = [h = handler.get()](const std::string& msg) {
@@ -150,6 +150,7 @@ int main(int argc, char *argv[]) {
     auto searchVM = std::make_unique<SearchViewModel>(router.get());
     QObject::connect(handler.get(), &Handler::S_UserSearch, searchVM.get(), &SearchViewModel::onUserSearchResults);
 
+    QObject::connect(searchVM.get(), &SearchViewModel::userSelectedForDialog, appController.get(), &AppController::openDialog);
     qCInfo(logMain) << "Запуск фонового сервиса (Android)";
     startAndroidBackgroundService();
 
@@ -161,6 +162,7 @@ int main(int argc, char *argv[]) {
     engine.rootContext()->setContextProperty("loginViewModel", loginVM.get());
     engine.rootContext()->setContextProperty("searchViewModel", searchVM.get());
     engine.rootContext()->setContextProperty("appState", state.get());
+    engine.rootContext()->setContextProperty("dialogManager", dialogManager.get());
 
     qCInfo(logMain) << "Загрузка главного QML файла";
     engine.load(QUrl(QStringLiteral("qrc:/qml/Main.qml")));

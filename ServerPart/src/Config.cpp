@@ -32,6 +32,7 @@ std::optional<std::string> Config::load(const std::string& path) {
         db_config.host = db["host"].get<std::string>();
         db_config.port = db.value("port", 5432);
         db_config.timeout = db.value("timeout", 10); 
+        db_config.pool_size = db.value("pool_size", 8);
         
         if (j.contains("server") && j["server"].is_object()) {
             const auto& srv = j["server"];

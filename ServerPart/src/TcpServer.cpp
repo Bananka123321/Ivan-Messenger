@@ -3,10 +3,12 @@
 #include <openssl/err.h>
 #include <cstring>
 #include <arpa/inet.h>
+#include <fcntl.h>
 
 TcpServer::TcpServer(const int port)
-    : port_(port), serverSocket_(-1), ssl_ctx_(nullptr), sessionManager_(),
-      handler_(sessionManager_), temporaryTokenManager_(Config::getDB().getConnectionStr())
+    : port_(port), serverSocket_(-1), ssl_ctx_(nullptr),
+      dbPool_(Config::getDB().getConnectionStr(), Config::getDB().pool_size), sessionManager_(),
+      handler_(sessionManager_, dbPool_), temporaryTokenManager_(dbPool_)
 {
     LOG_INFO(MAIN, "Инициализация TcpServer на порту ", port_);
 
@@ -142,21 +144,16 @@ void TcpServer::run() {
 
         LOG_INFO(NETWORK, "Новое подключение. socket_fd=", clientSocket, " ip=", ipStr);
 
-        SSL* ssl = SSL_new(ssl_ctx_);
-        SSL_set_fd(ssl, clientSocket);
-
-        if (SSL_accept(ssl) <= 0) {
-            LOG_WARNING(NETWORK, "Ошибка TLS Handshake для socket_fd=", clientSocket, " ip=", ipStr);
-            ERR_print_errors_fp(stderr);
-            SSL_free(ssl);
+        if (fcntl(clientSocket, F_SETFL, fcntl(clientSocket, F_GETFL, 0) | O_NONBLOCK) == -1) {
+            LOG_WARNING(NETWORK, "Не удалось перевести сокет в неблокирующий режим. socket_fd=", clientSocket, " ошибка=", strerror(errno));
             close(clientSocket);
             continue;
         }
 
-        LOG_INFO(NETWORK, "TLS Handshake успешен. socket_fd=", clientSocket);
+        SSL* ssl = SSL_new(ssl_ctx_);
+        SSL_set_fd(ssl, clientSocket);
 
         auto client = std::make_shared<ClientSession>(clientSocket, ssl);
-        client->setConnected(true);
 
         std::thread(&TcpServer::handleClient, this, client).detach();
     }
@@ -167,13 +164,19 @@ void TcpServer::run() {
 void TcpServer::handleClient(const std::shared_ptr<ClientSession>& client) {
     LOG_DEBUG(NETWORK, "Поток обработки клиента запущен. socket_fd=", client->getSocket());
 
+    if (!client->handshake(HANDSHAKE_TIMEOUT_MS)) {
+        LOG_WARNING(NETWORK, "Ошибка TLS Handshake для socket_fd=", client->getSocket());
+        return;
+    }
+
+    LOG_INFO(NETWORK, "TLS Handshake успешен. socket_fd=", client->getSocket());
+
     try {
-        std::string msg;
         client->setConnected(true);
 
-        while(serverRunning_.load() && client->receive(msg)) {
+        client->serve([this, &client](const std::string& msg) {
             handler_.handleMessage(client, msg);
-        }
+        }, serverRunning_);
 
         LOG_INFO(NETWORK, "Клиент завершил соединение (нормальный выход из цикла receive). socket_fd=", client->getSocket(), " userId=", client->getUserId());
         clientDisconnect(client);
@@ -185,19 +188,16 @@ void TcpServer::handleClient(const std::shared_ptr<ClientSession>& client) {
 }
 
 void TcpServer::clientDisconnect(const std::shared_ptr<ClientSession>& client) {
-    if(!client || !client->getConnected()) {
+    if(!client || !client->close()) {
         return;
     }
 
     LOG_INFO(NETWORK, "Инициализация корректного отключения клиента. socket_fd=", client->getSocket(), " userId=", client->getUserId());
 
     client->setConnected(false);
-    shutdown(client->getSocket(), SHUT_RDWR);
 
     sessionManager_.remove(client);
     temporaryTokenManager_.deleteSession(client->getTempToken());
-
-    close(client->getSocket());
 }
 
 void TcpServer::startClientMonitoring() {

@@ -1,8 +1,13 @@
 #include "TcpClient.h"
 #include "Logging.h"
 
+#include <QSslConfiguration>
+#include <QSslKey>
+#include <algorithm>
+
 TCPClient::TCPClient(const QString& host, int port, Router* msgRouter)
-    : host_(host), port_(port), router_(msgRouter), socket_(nullptr), bConnected(false), reconnectDelay_(1000) {}
+    : host_(host), port_(port), router_(msgRouter), socket_(nullptr), bConnected(false), reconnectDelay_(1000),
+      trustedCertificates_(QSslCertificate::fromPath(QStringLiteral(":/certs/server.crt"))) {}
 
 TCPClient::~TCPClient() {
     qCDebug(logTcp) << "Уничтожение TCPClient";
@@ -45,8 +50,11 @@ bool TCPClient::setupSocket() {
         reconnect();
     });
 
-    socket_->setPeerVerifyMode(QSslSocket::VerifyNone);
-    socket_->setProtocol(QSsl::TlsV1_2OrLater);
+    QSslConfiguration sslConfig = socket_->sslConfiguration();
+    sslConfig.setCaCertificates(trustedCertificates_);
+    sslConfig.setPeerVerifyMode(QSslSocket::VerifyPeer);
+    sslConfig.setProtocol(QSsl::TlsV1_2OrLater);
+    socket_->setSslConfiguration(sslConfig);
 
     socket_->connectToHostEncrypted(host_, port_);
     emit connecting();
@@ -94,11 +102,31 @@ void TCPClient::onDisconnected() {
 }
 
 void TCPClient::onSslErrors(const QList<QSslError> &errors) {
-    qCWarning(logTcp) << "Обнаружены ошибки SSL при рукопожатии:";
+    if (isTrusted(socket_->peerCertificate())) {
+        qCDebug(logTcp) << "Ключ сервера совпадает с доверенным, ошибки проверки сертификата пропущены:" << errors.size();
+        socket_->ignoreSslErrors(errors);
+        return;
+    }
+
+    qCWarning(logTcp) << "Сертификат сервера не совпадает с доверенным, соединение отклонено:";
     for (const auto &error : errors) {
         qCWarning(logTcp) << "   -" << error.errorString();
     }
-    socket_->ignoreSslErrors();
+}
+
+bool TCPClient::isTrusted(const QSslCertificate& certificate) const {
+    if (certificate.isNull()) {
+        return false;
+    }
+
+    const QByteArray key = certificate.publicKey().toDer();
+    return std::any_of(trustedCertificates_.cbegin(), trustedCertificates_.cend(), [&key](const QSslCertificate& trusted) {
+        return trusted.publicKey().toDer() == key;
+    });
+}
+
+void TCPClient::setTrustedCertificates(const QList<QSslCertificate>& certificates) {
+    trustedCertificates_ = certificates;
 }
 
 void TCPClient::disconnect() {

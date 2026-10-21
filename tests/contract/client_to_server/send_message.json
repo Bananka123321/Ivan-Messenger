@@ -1,0 +1,13 @@
+{
+  "type": "sendMessage",
+  "data": {
+    "id": 0,
+    "dialog_id": 15,
+    "sender_id": 7,
+    "type": 0,
+    "timestamp": 1760968800123,
+    "payload": {
+      "text": "Привет!"
+    }
+  }
+}

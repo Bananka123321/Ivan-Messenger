@@ -1,0 +1,5 @@
+{
+  "type": "openDialogResponse",
+  "success": false,
+  "error": "User not found"
+}

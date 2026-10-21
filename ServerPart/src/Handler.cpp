@@ -1,12 +1,12 @@
 #include "../include/Handler.h"
 #include "../include/Logger.h"
 
-Handler::Handler(SessionManager& sm)
-    : userManager_(Config::getDB().getConnectionStr()),
-      messageManager_(Config::getDB().getConnectionStr()),
-      dialogManager_(Config::getDB().getConnectionStr()),
-      devicesSessionManager_(Config::getDB().getConnectionStr()),
-      temporaryTokenManager_(Config::getDB().getConnectionStr()),
+Handler::Handler(SessionManager& sm, DB_ConnectionPool& pool)
+    : userManager_(pool),
+      messageManager_(pool),
+      dialogManager_(pool),
+      devicesSessionManager_(pool),
+      temporaryTokenManager_(pool),
       sessionManager_(sm),
       dispatcher_(sessionManager_)
 {
@@ -46,6 +46,10 @@ Handler::Handler(SessionManager& sm)
 
     handlers_["resumeSessionRequest"] = [this](const auto& client, const auto& j) {
         resumeSessionRequest(client, j);
+    };
+
+    handlers_["openDialogRequest"] = [this](const auto& client, const auto& j) {
+        openDialogRequest(client, j);
     };
 }
 
@@ -100,7 +104,7 @@ void Handler::loginRequest(const std::shared_ptr<ClientSession>& client, const n
     auto [success, user_id, error] = userManager_.loginUser(username, j["password"]);
     if (!success) {
         LOG_WARNING(HANDLER, "Неудачная попытка входа. username='", username, "' причина: ", error);
-        dispatcher_.sendTo(client, protocol::loginResponse(false, user_id, username, "", error));
+        dispatcher_.sendTo(client, protocol::loginResponse(false, user_id, username, "", "", error));
         return;
     }
 
@@ -130,7 +134,7 @@ void Handler::registerRequest(const std::shared_ptr<ClientSession>& client, cons
     auto [success, user_id, error] = userManager_.registerUser(username, j["password"]);
     if (!success) {
         LOG_WARNING(HANDLER, "Неудачная попытка регистрации. username='", username, "' причина: ", error);
-        dispatcher_.sendTo(client, protocol::registerResponse(success, user_id, username, "", error));
+        dispatcher_.sendTo(client, protocol::registerResponse(false, user_id, username, "", "", error));
         return;
     }
 
@@ -205,6 +209,13 @@ void Handler::sendMessage(const std::shared_ptr<ClientSession>& client, const nl
         text = std::move(cleanText);
     }
 
+    const auto participants = dialogManager_.getDialogParticipants(msg.dialog_id);
+    if (std::ranges::find(participants, clientUserId) == participants.end()) {
+        LOG_WARNING(HANDLER, "Попытка отправки в чужой диалог! userId=", clientUserId, " dialogId=", msg.dialog_id);
+        dispatcher_.sendTo(client, protocol::errorMessage("You are not a participant of this dialog"));
+        return;
+    }
+
     msg.created_at_ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
     const auto saved_id = messageManager_.saveMessage(msg);
@@ -217,7 +228,6 @@ void Handler::sendMessage(const std::shared_ptr<ClientSession>& client, const nl
     msg.id = saved_id.value();
     dialogManager_.updateLastMessage(msg);
 
-    const auto& participants = dialogManager_.getDialogParticipants(msg.dialog_id);
     int sentCount = 0;
     for (const auto participant : participants) {
         if (participant == msg.sender_id) {
@@ -289,9 +299,9 @@ void Handler::historyRequest(const std::shared_ptr<ClientSession>& client, const
         return;
     }
 
-    if (limit <= 0 || limit > 100) {
+    if (limit <= 0 || limit > protocol::HISTORY_MAX_LIMIT) {
         LOG_WARNING(HANDLER, "Недопустимый limit в historyRequest от userId=", clientUserId, " limit=", limit);
-        dispatcher_.sendTo(client, protocol::errorMessage("Limit must be between 1 and 100"));
+        dispatcher_.sendTo(client, protocol::errorMessage("Limit must be between 1 and " + std::to_string(protocol::HISTORY_MAX_LIMIT)));
         return;
     }
 
@@ -399,4 +409,49 @@ void Handler::resumeSessionRequest(const std::shared_ptr<ClientSession> &client,
     LOG_INFO(HANDLER, "Успешное восстановление сессии. userId=", user_id.value(), " username='", username.value(), "' новый connectToken=", tempToken.substr(0, 8), "...");
 
     dispatcher_.sendTo(client, protocol::resumeSessionResponse(true, tempToken));
+}
+
+void Handler::openDialogRequest(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j) {
+    if (!client->getIsAuthenticated()) {
+        LOG_WARNING(HANDLER, "Попытка открытия диалога без авторизации. socket_fd=", client->getSocket());
+        dispatcher_.sendTo(client, protocol::openDialogResponse(false, 0, User{}, {}, "Not authenticated"));
+        return;
+    }
+
+    const int userId = client->getUserId();
+
+    int targetId = 0;
+    try {
+        targetId = j.at("target_user_id").get<int>();
+    } catch (const std::exception& e) {
+        LOG_WARNING(HANDLER, "Неверный target_user_id в openDialogRequest от userId=", userId, " ошибка=", e.what());
+        dispatcher_.sendTo(client, protocol::openDialogResponse(false, 0, User{}, {}, "Invalid target_user_id"));
+        return;
+    }
+
+    if (targetId == userId) {
+        dispatcher_.sendTo(client, protocol::openDialogResponse(false, 0, User{}, {}, "Cannot open dialog with yourself"));
+        return;
+    }
+
+    const auto peerName = userManager_.getUsername(targetId);
+    if (!peerName.has_value()) {
+        LOG_WARNING(HANDLER, "openDialog: пользователь не найден. userId=", userId, " targetId=", targetId);
+        dispatcher_.sendTo(client, protocol::openDialogResponse(false, 0, User{}, {}, "User not found"));
+        return;
+    }
+
+    const auto dialogId = dialogManager_.findOrCreatePrivateDialog(userId, targetId);
+    if (!dialogId.has_value()) {
+        dispatcher_.sendTo(client, protocol::openDialogResponse(false, 0, User{}, {}, "Database error"));
+        return;
+    }
+
+    auto history = messageManager_.getHistory(*dialogId, std::numeric_limits<int64_t>::max(), 50);
+    std::ranges::reverse(history);
+
+    LOG_INFO(HANDLER, "Диалог открыт. userId=", userId, " targetId=", targetId, " dialogId=", *dialogId, " сообщений=", history.size());
+
+    dispatcher_.sendTo(client, protocol::openDialogResponse(
+        true, *dialogId, User{.username = *peerName, .user_id = targetId}, history));
 }

@@ -4,7 +4,7 @@
 #include <random>
 #include "iostream"
 
-DB_DevicesSessionManager::DB_DevicesSessionManager(const std::string& conn_str) : conn_(conn_str) {
+DB_DevicesSessionManager::DB_DevicesSessionManager(DB_ConnectionPool& pool) : pool_(pool) {
     LOG_INFO(DB, "Инициализация DB_DevicesSessionManager");
 };
 
@@ -21,7 +21,8 @@ std::optional<std::string> DB_DevicesSessionManager::createToken(const int user_
 
         std::string token = ss.str();
 
-        pqxx::work txn(conn_);
+        auto conn = pool_.acquire();
+        pqxx::work txn(*conn);
         txn.exec(
             "INSERT INTO user_sessions (user_id, token, device_info, ip_address) "
             "VALUES ($1, $2, $3, $4);",
@@ -39,7 +40,8 @@ std::optional<std::string> DB_DevicesSessionManager::createToken(const int user_
 
 bool DB_DevicesSessionManager::isValid(const std::string& token) {
     try {
-        pqxx::work txn(conn_);
+        auto conn = pool_.acquire();
+        pqxx::work txn(*conn);
         const auto result = txn.exec(
             "SELECT * FROM user_sessions WHERE token = $1 AND "
             "expires_at > CURRENT_TIMESTAMP;"
@@ -71,7 +73,8 @@ bool DB_DevicesSessionManager::isValid(const std::string& token) {
 
 void DB_DevicesSessionManager::updateActivity(const std::string& token) {
     try {
-        pqxx::work txn(conn_);
+        auto conn = pool_.acquire();
+        pqxx::work txn(*conn);
         txn.exec("UPDATE user_sessions SET last_activity = CURRENT_TIMESTAMP "
                  "WHERE token = $1;",
                  pqxx::params(token));
@@ -84,7 +87,8 @@ void DB_DevicesSessionManager::updateActivity(const std::string& token) {
 
 void DB_DevicesSessionManager::deleteSession(const std::string &token) {
     try {
-        pqxx::work txn(conn_);
+        auto conn = pool_.acquire();
+        pqxx::work txn(*conn);
         txn.exec("DELETE FROM user_sessions WHERE token = $1;", pqxx::params(token));
         txn.commit();
         LOG_INFO(DB, "Сессия удалена. token=", token.substr(0, 8), "...");
@@ -95,7 +99,8 @@ void DB_DevicesSessionManager::deleteSession(const std::string &token) {
 
 void DB_DevicesSessionManager::deleteAllSessions(int user_id, const std::string &tokenSafe) {
     try {
-        pqxx::work txn(conn_);
+        auto conn = pool_.acquire();
+        pqxx::work txn(*conn);
         auto result = txn.exec("DELETE FROM user_sessions WHERE user_id = $1 AND token != $2;",
             pqxx::params(user_id, tokenSafe));
         txn.commit();
@@ -108,7 +113,8 @@ void DB_DevicesSessionManager::deleteAllSessions(int user_id, const std::string 
 
 std::optional<int> DB_DevicesSessionManager::getUserIdByToken(const std::string& token) {
     try {
-        pqxx::work txn(conn_);
+        auto conn = pool_.acquire();
+        pqxx::work txn(*conn);
         const auto result = txn.exec("SELECT user_id FROM user_sessions WHERE token = $1 "
                                      "AND expires_at > CURRENT_TIMESTAMP;",
             pqxx::params(token));

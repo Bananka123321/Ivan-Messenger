@@ -11,6 +11,7 @@ struct DBConfig {
     std::string host;
     int port;
     int timeout;
+    int pool_size;
 
     [[nodiscard]] std::string getConnectionStr() const;
 };

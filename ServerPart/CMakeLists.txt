@@ -9,7 +9,6 @@ project(Server)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(SERVER_SOURCES
-    src/main.cpp
     src/TcpServer.cpp
     src/ClientSession.cpp
     src/Handler.cpp
@@ -19,6 +18,7 @@ set(SERVER_SOURCES
     src/SignalHandler.cpp
     src/PacketIO_Server.cpp
 
+    src/DB_ConnectionPool.cpp
     src/DB_MessageManager.cpp
     src/DB_DialogManager.cpp
     src/DB_UserManager.cpp
@@ -53,15 +53,24 @@ if(ENABLE_UBSAN)
     add_link_options(-fsanitize=undefined)
 endif()
 
-add_executable(Server ${SERVER_SOURCES})
+add_library(server_core STATIC ${SERVER_SOURCES})
 
-target_include_directories(Server PRIVATE
+target_include_directories(server_core PUBLIC
     include
     ../common
 )
 
-target_link_libraries(Server PRIVATE
+target_link_libraries(server_core PUBLIC
     pqxx pq crypto pthread
     ${ARGON2_LIBRARIES}
     OpenSSL::SSL
 )
+
+add_executable(Server src/main.cpp)
+target_link_libraries(Server PRIVATE server_core)
+
+option(BUILD_TESTS "Build unit, integration and contract tests" OFF)
+if(BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()

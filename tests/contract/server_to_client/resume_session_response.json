@@ -1,0 +1,5 @@
+{
+  "type": "resumeSessionResponse",
+  "success": true,
+  "token": "0123456789abcdef0123456789abcdef"
+}
