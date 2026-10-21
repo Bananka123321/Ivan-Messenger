@@ -103,3 +103,45 @@ TEST(PacketIOServer, FailsWhenPeerClosedConnection) {
     std::string received;
     EXPECT_FALSE(PacketIO_Server::recvPacket(tls.server(), received));
 }
+
+TEST(PacketIOServer, FramePrefixesBigEndianLength) {
+    EXPECT_EQ(PacketIO_Server::frame("abc"), header(3) + "abc");
+}
+
+TEST(PacketIOServer, ExtractWaitsForCompleteHeaderAndPayload) {
+    std::string buffer = header(5).substr(0, 2);
+    std::string packet;
+
+    EXPECT_EQ(PacketIO_Server::extractPacket(buffer, packet), PacketIO_Server::Extract::Incomplete);
+
+    buffer = header(5) + "abc";
+    EXPECT_EQ(PacketIO_Server::extractPacket(buffer, packet), PacketIO_Server::Extract::Incomplete);
+    EXPECT_EQ(buffer, header(5) + "abc");
+
+    buffer += "de";
+    EXPECT_EQ(PacketIO_Server::extractPacket(buffer, packet), PacketIO_Server::Extract::Packet);
+    EXPECT_EQ(packet, "abcde");
+    EXPECT_TRUE(buffer.empty());
+}
+
+TEST(PacketIOServer, ExtractTakesPacketsOneByOneAndKeepsTail) {
+    std::string buffer = PacketIO_Server::frame("one") + PacketIO_Server::frame("two") + header(10) + "x";
+    std::string packet;
+
+    ASSERT_EQ(PacketIO_Server::extractPacket(buffer, packet), PacketIO_Server::Extract::Packet);
+    EXPECT_EQ(packet, "one");
+    ASSERT_EQ(PacketIO_Server::extractPacket(buffer, packet), PacketIO_Server::Extract::Packet);
+    EXPECT_EQ(packet, "two");
+    EXPECT_EQ(PacketIO_Server::extractPacket(buffer, packet), PacketIO_Server::Extract::Incomplete);
+    EXPECT_EQ(buffer, header(10) + "x");
+}
+
+TEST(PacketIOServer, ExtractRejectsInvalidSizes) {
+    std::string packet;
+
+    std::string zero = header(0);
+    EXPECT_EQ(PacketIO_Server::extractPacket(zero, packet), PacketIO_Server::Extract::Invalid);
+
+    std::string tooBig = header(MAX_PACKET_SIZE + 1);
+    EXPECT_EQ(PacketIO_Server::extractPacket(tooBig, packet), PacketIO_Server::Extract::Invalid);
+}
