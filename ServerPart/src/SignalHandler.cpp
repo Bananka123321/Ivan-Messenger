@@ -15,6 +15,8 @@ void SignalHandler::s_Setup() {
 
     sigaction(SIGINT, &sigHandler, nullptr);
     sigaction(SIGTERM, &sigHandler, nullptr);
+
+    signal(SIGPIPE, SIG_IGN);
 }
 
 bool SignalHandler::s_isShutdownRequested() {

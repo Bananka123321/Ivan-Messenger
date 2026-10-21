@@ -22,6 +22,7 @@ TEST(MessageDispatcher, SendToDeliversMessage) {
     Peer peer(1);
 
     dispatcher.sendTo(peer.session, "hello");
+    ASSERT_TRUE(peer.session->flush());
 
     EXPECT_EQ(peer.tls.clientReadPackets(), std::vector<std::string>{"hello"});
 }
@@ -44,7 +45,7 @@ TEST(MessageDispatcher, SendFailureTriggersDisconnect) {
     std::shared_ptr<ClientSession> disconnected;
     dispatcher.onDisconnect = [&](const auto& s) { disconnected = s; };
 
-    peer.tls.dropClient();
+    peer.session->close();
     dispatcher.sendTo(peer.session, "hello");
 
     EXPECT_EQ(disconnected, peer.session);
@@ -55,7 +56,7 @@ TEST(MessageDispatcher, SendFailureWithoutCallbackDoesNotCrash) {
     const MessageDispatcher dispatcher(sm);
     Peer peer(1);
 
-    peer.tls.dropClient();
+    peer.session->close();
     dispatcher.sendTo(peer.session, "hello");
 }
 
@@ -70,6 +71,8 @@ TEST(MessageDispatcher, BroadcastReachesEverySession) {
     dispatcher.broadcast("news");
 
     for (Peer* p : {&a, &b, &c})
+        ASSERT_TRUE(p->session->flush());
+    for (Peer* p : {&a, &b, &c})
         EXPECT_EQ(p->tls.clientReadPackets(), std::vector<std::string>{"news"});
 }
 
@@ -83,9 +86,10 @@ TEST(MessageDispatcher, BroadcastDisconnectsOnlyFailedSessions) {
     std::vector<std::shared_ptr<ClientSession>> disconnected;
     dispatcher.onDisconnect = [&](const auto& s) { disconnected.push_back(s); };
 
-    broken.tls.dropClient();
+    broken.session->close();
     dispatcher.broadcast("news");
 
+    ASSERT_TRUE(ok.session->flush());
     EXPECT_EQ(ok.tls.clientReadPackets(), std::vector<std::string>{"news"});
     ASSERT_EQ(disconnected.size(), 1u);
     EXPECT_EQ(disconnected[0], broken.session);

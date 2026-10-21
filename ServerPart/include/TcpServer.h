@@ -35,6 +35,7 @@ private:
 
     static constexpr int64_t HEARTBEAT_INTERVAL_MS = 30000;
     static constexpr int64_t SESSION_TIMEOUT_MS = 90000;
+    static constexpr int HANDSHAKE_TIMEOUT_MS = 10000;
 
     friend class MessageDispatcher;
 

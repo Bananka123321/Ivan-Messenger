@@ -13,6 +13,7 @@ struct TestClient {
     TestClient() : session(std::make_shared<ClientSession>(-1, tls.takeServer())) {}
 
     std::vector<nlohmann::json> receive() {
+        EXPECT_TRUE(session->flush());
         std::vector<nlohmann::json> result;
         for (const auto& packet : tls.clientReadPackets())
             result.push_back(nlohmann::json::parse(packet));
