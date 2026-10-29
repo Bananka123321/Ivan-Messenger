@@ -1,9 +1,12 @@
 #include "TestDatabase.h"
 
+#include <algorithm>
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <sstream>
+#include <vector>
 
 namespace {
 
@@ -14,6 +17,15 @@ std::string env(const char* name, const std::string& fallback) {
 
 bool databaseRequired() {
     return env("MESSENGER_TEST_DB_REQUIRED", "0") == "1";
+}
+
+std::string readSqlFile(const std::string& path) {
+    std::ifstream file(path);
+    if (!file)
+        throw std::runtime_error("Не найден SQL-файл: " + path);
+    std::stringstream sql;
+    sql << file.rdbuf();
+    return sql.str();
 }
 
 }
@@ -46,28 +58,37 @@ std::unique_ptr<TempFile> TestDatabase::makeServerConfig() {
 
 void TestDatabase::ensureSchema() {
     pqxx::connection conn(connectionString());
+    bool hasBaseSchema = false;
     {
         pqxx::work txn(conn);
-        if (txn.query_value<bool>("SELECT to_regclass('public.users') IS NOT NULL"))
-            return;
+        hasBaseSchema = txn.query_value<bool>("SELECT to_regclass('public.users') IS NOT NULL");
     }
 
-    std::ifstream file(SCHEMA_SQL_FILE);
-    if (!file)
-        throw std::runtime_error("Не найден файл схемы: " SCHEMA_SQL_FILE);
-    std::stringstream sql;
-    sql << file.rdbuf();
+    if (!hasBaseSchema) {
+        pqxx::work txn(conn);
+        txn.exec(readSqlFile(SCHEMA_SQL_FILE));
+        txn.commit();
+    }
 
-    pqxx::work txn(conn);
-    txn.exec(sql.str());
-    txn.commit();
+    // Миграции идемпотентны, поэтому их можно накатывать и на свежую, и на старую тестовую базу.
+    std::vector<std::filesystem::path> migrations;
+    for (const auto& entry : std::filesystem::directory_iterator(MIGRATIONS_DIR))
+        if (entry.path().extension() == ".sql")
+            migrations.push_back(entry.path());
+    std::ranges::sort(migrations);
+
+    for (const auto& migration : migrations) {
+        pqxx::work txn(conn);
+        txn.exec(readSqlFile(migration.string()));
+        txn.commit();
+    }
 }
 
 void TestDatabase::truncateAll() {
     pqxx::connection conn(connectionString());
     pqxx::work txn(conn);
     txn.exec("TRUNCATE users, dialogs, dialog_participants, dialog_last_message, messages, "
-             "user_sessions, connect_tokens RESTART IDENTITY CASCADE");
+             "user_sessions, connect_tokens, files RESTART IDENTITY CASCADE");
     txn.commit();
 }
 

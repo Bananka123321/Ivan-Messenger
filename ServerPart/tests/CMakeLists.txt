@@ -33,6 +33,7 @@ target_compile_definitions(server_test_support PUBLIC
     TEST_CERT_FILE="${TEST_DATA_DIR}/test.crt"
     TEST_KEY_FILE="${TEST_DATA_DIR}/test.key"
     SCHEMA_SQL_FILE="${CMAKE_CURRENT_SOURCE_DIR}/../sql/schema.sql"
+    MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../sql/migrations"
     CONTRACT_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../tests/contract"
 )
 
