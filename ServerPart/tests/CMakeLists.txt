@@ -63,6 +63,7 @@ endfunction()
 
 add_server_test(test_validator unit unit/test_validator.cpp)
 add_server_test(test_message unit unit/test_message.cpp)
+add_server_test(test_base64 unit unit/test_base64.cpp)
 add_server_test(test_protocol unit unit/test_protocol.cpp)
 add_server_test(test_config unit unit/test_config.cpp)
 add_server_test(test_packet_io unit unit/test_packet_io.cpp)
