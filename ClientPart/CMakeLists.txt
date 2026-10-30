@@ -48,6 +48,8 @@ set(CLIENT_HEADERS
     ../common/protocol.h
     ../common/Validator.h
     ../common/User.h
+    ../common/Base64.h
+    ../common/FileInfo.h
 )
 
 add_library(client_core STATIC

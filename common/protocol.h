@@ -5,6 +5,8 @@
 #include <vector>
 #include <variant>
 
+#include "Base64.h"
+#include "FileInfo.h"
 #include "Message.h"
 #include "MetaDialog_Client.h"
 #include "User.h"
@@ -45,10 +47,14 @@ inline void to_json(nlohmann::json& j, const Message& m) {
                 pj["filename"] = content.filename;
                 pj["size_bytes"] = content.size_bytes;
                 pj["caption"] = content.caption;
+                pj["file_id"] = content.file_id;
+                pj["mime_type"] = content.mime_type;
             }
             else if constexpr (std::is_same_v<T, VoiceContent>) {
                 pj["url"] = content.url;
                 pj["duration_sec"] = content.duration_sec;
+                pj["file_id"] = content.file_id;
+                pj["size_bytes"] = content.size_bytes;
             }
             return pj;
         }, m.payload)}
@@ -72,13 +78,17 @@ inline void from_json(const nlohmann::json& j, Message& m) {
             .url = payload_j.value("url", ""),
             .caption = payload_j.value("caption", ""),
             .filename = payload_j.value("filename", ""),
-            .size_bytes = payload_j.value("size_bytes", 0ULL)
+            .size_bytes = payload_j.value("size_bytes", 0ULL),
+            .file_id = payload_j.value("file_id", int64_t{0}),
+            .mime_type = payload_j.value("mime_type", "")
         };
     }
     else if (m.type == MessageType::Voice) {
         m.payload = VoiceContent{
             .url = payload_j.value("url", ""),
-            .duration_sec = payload_j.value("duration_sec", 0U)
+            .duration_sec = payload_j.value("duration_sec", 0U),
+            .file_id = payload_j.value("file_id", int64_t{0}),
+            .size_bytes = payload_j.value("size_bytes", 0ULL)
         };
     }
     else {
@@ -109,6 +119,11 @@ inline void from_json(const nlohmann::json& j, MetaDialog_Client& md) {
 namespace protocol {
 
 constexpr int HISTORY_MAX_LIMIT = 100;
+
+// Размер одного чанка файла до кодирования в base64.
+// 256 КБ превращаются примерно в 350 КБ base64 и с запасом влезают в пакет (MAX_PACKET_SIZE = 1 МБ).
+constexpr uint32_t FILE_CHUNK_SIZE = 256 * 1024;
+constexpr uint64_t FILE_MAX_SIZE = 100ULL * 1024 * 1024;
 
     
 //      CHAT
@@ -188,6 +203,54 @@ inline std::string openDialogRequest(int64_t target_user_id) {
     nlohmann::json j;
     j["type"] = "openDialogRequest";
     j["target_user_id"] = target_user_id;
+    return j.dump();
+}
+
+//      FILES: CLIENT --> SERVER
+//
+// Загрузка:   fileUploadInitRequest -> fileUploadInitResponse(file_id, offset)
+//             fileChunk(offset) -> fileChunkAck(offset) ... пока offset != size_bytes
+//             на последнем чанке сервер сверяет SHA-256 и отвечает completed = true
+// Докачка:    fileUploadStatusRequest(file_id) -> fileUploadStatusResponse(offset),
+//             либо повторный fileUploadInitRequest с тем же хэшем: сервер вернёт прежний file_id и offset
+// Отправка:   sendMessage с типом Image/File/Voice и file_id в payload
+// Скачивание: fileDownloadRequest(file_id, offset) -> fileDownloadResponse(чанк), клиент сам запрашивает следующий
+//=================================================================================================================================================================
+
+inline std::string fileUploadInitRequest(int64_t dialog_id, const std::string& filename, const std::string& mime_type,
+                                         MessageType kind, uint64_t size_bytes, const std::string& sha256) {
+    nlohmann::json j;
+    j["type"] = "fileUploadInitRequest";
+    j["dialog_id"] = dialog_id;
+    j["filename"] = filename;
+    j["mime_type"] = mime_type;
+    j["kind"] = static_cast<uint8_t>(kind);
+    j["size_bytes"] = size_bytes;
+    j["sha256"] = sha256;
+    return j.dump();
+}
+
+inline std::string fileUploadStatusRequest(int64_t file_id) {
+    nlohmann::json j;
+    j["type"] = "fileUploadStatusRequest";
+    j["file_id"] = file_id;
+    return j.dump();
+}
+
+inline std::string fileChunk(int64_t file_id, uint64_t offset, std::string_view bytes) {
+    nlohmann::json j;
+    j["type"] = "fileChunk";
+    j["file_id"] = file_id;
+    j["offset"] = offset;
+    j["data"] = base64::encode(bytes);
+    return j.dump();
+}
+
+inline std::string fileDownloadRequest(int64_t file_id, uint64_t offset) {
+    nlohmann::json j;
+    j["type"] = "fileDownloadRequest";
+    j["file_id"] = file_id;
+    j["offset"] = offset;
     return j.dump();
 }
 
@@ -286,6 +349,59 @@ inline std::string openDialogResponse(bool success, int64_t dialog_id, const Use
         j["error"] = reason;
     }
 
+    return j.dump();
+}
+
+//      FILES: SERVER --> CLIENT
+//=================================================================================================================================================================
+
+inline std::string fileUploadInitResponse(bool success, int64_t file_id, uint64_t offset, const std::string& reason = "") {
+    nlohmann::json j;
+    j["type"] = "fileUploadInitResponse";
+    j["success"] = success;
+    j["file_id"] = file_id;
+    j["offset"] = offset;
+    j["chunk_size"] = FILE_CHUNK_SIZE;
+    j["error"] = reason;
+    return j.dump();
+}
+
+inline std::string fileUploadStatusResponse(bool success, int64_t file_id, uint64_t offset, const std::string& status, const std::string& reason = "") {
+    nlohmann::json j;
+    j["type"] = "fileUploadStatusResponse";
+    j["success"] = success;
+    j["file_id"] = file_id;
+    j["offset"] = offset;
+    j["status"] = status;
+    j["error"] = reason;
+    return j.dump();
+}
+
+// offset — сколько байт сервер уже принял. При success = false клиент продолжает с этого offset.
+inline std::string fileChunkAck(bool success, int64_t file_id, uint64_t offset, bool completed, const std::string& reason = "") {
+    nlohmann::json j;
+    j["type"] = "fileChunkAck";
+    j["success"] = success;
+    j["file_id"] = file_id;
+    j["offset"] = offset;
+    j["completed"] = completed;
+    j["error"] = reason;
+    return j.dump();
+}
+
+inline std::string fileDownloadResponse(bool success, const FileInfo& file, uint64_t offset, std::string_view bytes, const std::string& reason = "") {
+    nlohmann::json j;
+    j["type"] = "fileDownloadResponse";
+    j["success"] = success;
+    j["file_id"] = file.file_id;
+    j["offset"] = offset;
+    j["data"] = base64::encode(bytes);
+    j["filename"] = file.filename;
+    j["mime_type"] = file.mime_type;
+    j["kind"] = static_cast<uint8_t>(file.kind);
+    j["size_bytes"] = file.size_bytes;
+    j["sha256"] = file.sha256;
+    j["error"] = reason;
     return j.dump();
 }
 

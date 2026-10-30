@@ -13,11 +13,15 @@ struct MediaContent {
     std::string caption;
     std::string filename;
     uint64_t size_bytes = 0;
+    int64_t file_id = 0;        // id из таблицы files, по нему файл скачивается
+    std::string mime_type;
 };
 
 struct VoiceContent {
     std::string url;
     uint32_t duration_sec = 0;
+    int64_t file_id = 0;
+    uint64_t size_bytes = 0;
 };
 
 using MessagePayload = std::variant<TextContent, MediaContent, VoiceContent>;
@@ -46,9 +50,9 @@ struct Message {
             if constexpr (std::is_same_v<T, TextContent>) {
                 return content.text;
             } else if constexpr (std::is_same_v<T, MediaContent>) {
-                return "Файл...";
+                return content.filename.empty() ? "Файл" : "Файл: " + content.filename;
             } else if constexpr (std::is_same_v<T, VoiceContent>) {
-                return std::to_string(content.duration_sec) + " сек";
+                return "Голосовое сообщение, " + std::to_string(content.duration_sec) + " сек";
             }
             return "Неизвестное сообщение";
         }, payload);

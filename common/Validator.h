@@ -16,4 +16,9 @@ namespace Validator {
     bool valid_int_field(const nlohmann::json& j, const std::string& key, const long int& minV, const long int& maxV, std::string& error);
     std::string sanitize(std::string_view value);
     std::optional<std::string> validateMessage(const Message& msg);
+
+    std::optional<std::string> filename(std::string_view value);
+    std::optional<std::string> mimeType(std::string_view value);
+    std::optional<std::string> sha256Hex(std::string_view value);
+    bool isFileKind(MessageType type);
 }

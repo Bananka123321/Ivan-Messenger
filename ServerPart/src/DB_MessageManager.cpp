@@ -80,10 +80,14 @@ std::string DB_MessageManager::serializePayload(const MessagePayload& payload) {
             j["filename"] = content.filename;
             j["size_bytes"] = content.size_bytes;
             j["caption"] = content.caption;
+            j["file_id"] = content.file_id;
+            j["mime_type"] = content.mime_type;
         }
         else if constexpr (std::is_same_v<T, VoiceContent>) {
             j["url"] = content.url;
             j["duration_sec"] = content.duration_sec;
+            j["file_id"] = content.file_id;
+            j["size_bytes"] = content.size_bytes;
         }
 
         return j.dump();
@@ -103,16 +107,20 @@ MessagePayload DB_MessageManager::deserializePayload(const std::string& json, co
             case MessageType::Image:
             case MessageType::File:
                 return MediaContent{
-                .url = j["url"].get<std::string>(),
+                .url = j.value("url", ""),
                 .caption = j.value("caption", ""),
                 .filename = j.value("filename", ""),
-                .size_bytes = j.value("size_bytes", 0ULL)
+                .size_bytes = j.value("size_bytes", 0ULL),
+                .file_id = j.value("file_id", int64_t{0}),
+                .mime_type = j.value("mime_type", "")
             };
 
             case MessageType::Voice:
                 return VoiceContent{
-                .url = j["url"].get<std::string>(),
-                .duration_sec = j["duration_sec"].get<uint32_t>()
+                .url = j.value("url", ""),
+                .duration_sec = j.value("duration_sec", 0U),
+                .file_id = j.value("file_id", int64_t{0}),
+                .size_bytes = j.value("size_bytes", 0ULL)
             };
 
             default:

@@ -139,28 +139,73 @@ TEST(ValidatorValidateMessage, ChecksMediaContent) {
     Message msg;
     msg.type = MessageType::File;
 
-    msg.payload = MediaContent{.url = "files/1", .size_bytes = 100ULL * 1024 * 1024};
+    msg.payload = MediaContent{.size_bytes = 100ULL * 1024 * 1024, .file_id = 1};
     EXPECT_EQ(Validator::validateMessage(msg), std::nullopt);
 
-    msg.payload = MediaContent{.url = "", .size_bytes = 10};
-    EXPECT_EQ(Validator::validateMessage(msg), "Media URL is empty");
+    msg.payload = MediaContent{.size_bytes = 10};
+    EXPECT_EQ(Validator::validateMessage(msg), "Media file_id is missing");
 
-    msg.payload = MediaContent{.url = "files/1", .size_bytes = 100ULL * 1024 * 1024 + 1};
+    msg.payload = MediaContent{.size_bytes = 100ULL * 1024 * 1024 + 1, .file_id = 1};
     EXPECT_EQ(Validator::validateMessage(msg), "File too large (max 100MB)");
+
+    msg.payload = MediaContent{.caption = std::string(1025, 'a'), .file_id = 1};
+    EXPECT_EQ(Validator::validateMessage(msg), "Caption too long (max 1024 characters)");
 }
 
 TEST(ValidatorValidateMessage, ChecksVoiceContent) {
     Message msg;
     msg.type = MessageType::Voice;
 
-    msg.payload = VoiceContent{.url = "voice/1", .duration_sec = 300};
+    msg.payload = VoiceContent{.duration_sec = 300, .file_id = 1};
     EXPECT_EQ(Validator::validateMessage(msg), std::nullopt);
 
-    msg.payload = VoiceContent{.url = "", .duration_sec = 5};
-    EXPECT_EQ(Validator::validateMessage(msg), "Voice URL is empty");
+    msg.payload = VoiceContent{.duration_sec = 5};
+    EXPECT_EQ(Validator::validateMessage(msg), "Voice file_id is missing");
 
-    msg.payload = VoiceContent{.url = "voice/1", .duration_sec = 301};
+    msg.payload = VoiceContent{.duration_sec = 301, .file_id = 1};
     EXPECT_EQ(Validator::validateMessage(msg), "Voice message too long (max 5 min)");
+}
+
+TEST(ValidatorFiles, Filename) {
+    EXPECT_EQ(Validator::filename("отчёт 2026.pdf"), std::nullopt);
+    EXPECT_EQ(Validator::filename(std::string(255, 'a')), std::nullopt);
+
+    EXPECT_NE(Validator::filename(""), std::nullopt);
+    EXPECT_NE(Validator::filename(std::string(256, 'a')), std::nullopt);
+    EXPECT_NE(Validator::filename(".."), std::nullopt);
+    EXPECT_NE(Validator::filename("../etc/passwd"), std::nullopt);
+    EXPECT_NE(Validator::filename("a\\b.txt"), std::nullopt);
+    EXPECT_NE(Validator::filename(std::string("a\nb")), std::nullopt);
+}
+
+TEST(ValidatorFiles, MimeType) {
+    EXPECT_EQ(Validator::mimeType("image/jpeg"), std::nullopt);
+    EXPECT_EQ(Validator::mimeType("application/vnd.openxmlformats-officedocument.wordprocessingml.document"), std::nullopt);
+    EXPECT_EQ(Validator::mimeType("audio/ogg"), std::nullopt);
+
+    EXPECT_NE(Validator::mimeType(""), std::nullopt);
+    EXPECT_NE(Validator::mimeType("image"), std::nullopt);
+    EXPECT_NE(Validator::mimeType("/jpeg"), std::nullopt);
+    EXPECT_NE(Validator::mimeType("image/"), std::nullopt);
+    EXPECT_NE(Validator::mimeType("image/jp eg"), std::nullopt);
+    EXPECT_NE(Validator::mimeType("a/b/c"), std::nullopt);
+}
+
+TEST(ValidatorFiles, Sha256Hex) {
+    EXPECT_EQ(Validator::sha256Hex(std::string(64, 'a')), std::nullopt);
+    EXPECT_EQ(Validator::sha256Hex("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"), std::nullopt);
+
+    EXPECT_NE(Validator::sha256Hex(std::string(63, 'a')), std::nullopt);
+    EXPECT_NE(Validator::sha256Hex(std::string(64, 'A')), std::nullopt);
+    EXPECT_NE(Validator::sha256Hex(std::string(64, 'g')), std::nullopt);
+}
+
+TEST(ValidatorFiles, OnlyImageFileAndVoiceCarryFiles) {
+    EXPECT_TRUE(Validator::isFileKind(MessageType::Image));
+    EXPECT_TRUE(Validator::isFileKind(MessageType::File));
+    EXPECT_TRUE(Validator::isFileKind(MessageType::Voice));
+    EXPECT_FALSE(Validator::isFileKind(MessageType::Text));
+    EXPECT_FALSE(Validator::isFileKind(MessageType::Sticker));
 }
 
 TEST(ValidatorSanitize, KeepsPrintableAsciiAndCyrillic) {
