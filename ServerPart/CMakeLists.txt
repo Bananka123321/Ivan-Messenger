@@ -17,6 +17,7 @@ set(SERVER_SOURCES
     src/Config.cpp
     src/SignalHandler.cpp
     src/PacketIO_Server.cpp
+    src/FileStorage.cpp
 
     src/DB_ConnectionPool.cpp
     src/DB_MessageManager.cpp
