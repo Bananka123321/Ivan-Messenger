@@ -13,6 +13,7 @@ protected:
         Config::loaded = false;
         Config::db_config = {};
         Config::server_config = {};
+        Config::storage_config = {};
     }
 };
 
@@ -47,6 +48,7 @@ TEST_F(ConfigTest, AppliesDefaultsForOptionalFields) {
     EXPECT_EQ(Config::getDB().pool_size, 8);
     EXPECT_EQ(Config::getServer().port, 6767);
     EXPECT_EQ(Config::getServer().max_connections, 100);
+    EXPECT_EQ(Config::getStorage().path, "storage");
 }
 
 TEST_F(ConfigTest, AppliesServerDefaultsInsidePartialSection) {
@@ -102,4 +104,24 @@ TEST(DBConfig, BuildsLibpqConnectionString) {
     const DBConfig db{.name = "chat_db", .user = "ivan", .password = "pw", .host = "localhost", .port = 5432, .timeout = 10};
 
     EXPECT_EQ(db.getConnectionStr(), "dbname=chat_db user=ivan password=pw host=localhost port=5432 connect_timeout=10");
+}
+
+TEST_F(ConfigTest, LoadsStoragePath) {
+    const TempFile file(R"({
+        "database": {"name": "n", "user": "u", "password": "p", "host": "h"},
+        "storage": {"path": "/var/lib/messenger/files"}
+    })");
+
+    ASSERT_EQ(Config::load(file.path()), std::nullopt);
+
+    EXPECT_EQ(Config::getStorage().path, "/var/lib/messenger/files");
+}
+
+TEST_F(ConfigTest, RejectsEmptyStoragePath) {
+    const TempFile file(R"({
+        "database": {"name": "n", "user": "u", "password": "p", "host": "h"},
+        "storage": {"path": ""}
+    })");
+
+    EXPECT_THAT(Config::load(file.path()), Optional(HasSubstr("Storage path")));
 }
