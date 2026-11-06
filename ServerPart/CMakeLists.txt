@@ -26,6 +26,7 @@ set(SERVER_SOURCES
     src/DB_DevicesSessionManager.cpp
     src/DB_TemporaryTokenManager.cpp
     src/DB_FileManager.cpp
+    src/FileTransferService.cpp
 
     ../common/Validator.cpp
 )
