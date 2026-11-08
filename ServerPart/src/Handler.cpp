@@ -7,6 +7,8 @@ Handler::Handler(SessionManager& sm, DB_ConnectionPool& pool)
       dialogManager_(pool),
       devicesSessionManager_(pool),
       temporaryTokenManager_(pool),
+      fileStorage_(Config::getStorage().path),
+      fileTransfer_(pool, fileStorage_),
       sessionManager_(sm),
       dispatcher_(sessionManager_)
 {
@@ -50,6 +52,22 @@ Handler::Handler(SessionManager& sm, DB_ConnectionPool& pool)
 
     handlers_["openDialogRequest"] = [this](const auto& client, const auto& j) {
         openDialogRequest(client, j);
+    };
+
+    handlers_["fileUploadInitRequest"] = [this](const auto& client, const auto& j) {
+        fileUploadInitRequest(client, j);
+    };
+
+    handlers_["fileUploadStatusRequest"] = [this](const auto& client, const auto& j) {
+        fileUploadStatusRequest(client, j);
+    };
+
+    handlers_["fileChunk"] = [this](const auto& client, const auto& j) {
+        fileChunk(client, j);
+    };
+
+    handlers_["fileDownloadRequest"] = [this](const auto& client, const auto& j) {
+        fileDownloadRequest(client, j);
     };
 }
 
@@ -213,6 +231,12 @@ void Handler::sendMessage(const std::shared_ptr<ClientSession>& client, const nl
     if (std::ranges::find(participants, clientUserId) == participants.end()) {
         LOG_WARNING(HANDLER, "Попытка отправки в чужой диалог! userId=", clientUserId, " dialogId=", msg.dialog_id);
         dispatcher_.sendTo(client, protocol::errorMessage("You are not a participant of this dialog"));
+        return;
+    }
+
+    if (const auto error = attachFile(clientUserId, msg); error.has_value()) {
+        LOG_WARNING(HANDLER, "Некорректное вложение от userId=", clientUserId, " ошибка: ", error.value());
+        dispatcher_.sendTo(client, protocol::errorMessage(error.value()));
         return;
     }
 
@@ -454,4 +478,131 @@ void Handler::openDialogRequest(const std::shared_ptr<ClientSession>& client, co
 
     dispatcher_.sendTo(client, protocol::openDialogResponse(
         true, *dialogId, User{.username = *peerName, .user_id = targetId}, history));
+}
+//============================================================================================================================
+//      FILES
+//============================================================================================================================
+
+std::optional<std::string> Handler::attachFile(const int userId, Message& msg) {
+    if (msg.type == MessageType::Text || msg.type == MessageType::Sticker)
+        return std::nullopt;
+
+    int64_t fileId = 0;
+    if (const auto* media = std::get_if<MediaContent>(&msg.payload))
+        fileId = media->file_id;
+    else if (const auto* voice = std::get_if<VoiceContent>(&msg.payload))
+        fileId = voice->file_id;
+    else
+        return "Message type does not match payload";
+
+    const auto check = fileTransfer_.checkAttachment(userId, fileId, msg.dialog_id, msg.type);
+    if (!check.ok)
+        return check.error;
+
+    // Имя, размер и тип берём из БД, а не из пакета клиента
+    if (auto* media = std::get_if<MediaContent>(&msg.payload)) {
+        media->filename = check.file.filename;
+        media->size_bytes = check.file.size_bytes;
+        media->mime_type = check.file.mime_type;
+        media->caption = Validator::sanitize(media->caption);
+    } else if (auto* voice = std::get_if<VoiceContent>(&msg.payload)) {
+        voice->size_bytes = check.file.size_bytes;
+    }
+
+    return std::nullopt;
+}
+
+void Handler::fileUploadInitRequest(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j) {
+    if (!client->getIsAuthenticated()) {
+        LOG_WARNING(HANDLER, "Попытка загрузки файла без авторизации. socket_fd=", client->getSocket());
+        dispatcher_.sendTo(client, protocol::fileUploadInitResponse(false, 0, 0, "Not authenticated"));
+        return;
+    }
+
+    UploadRequest request;
+    try {
+        request.owner_id = client->getUserId();
+        request.dialog_id = j.at("dialog_id").get<int64_t>();
+        request.filename = j.at("filename").get<std::string>();
+        request.mime_type = j.at("mime_type").get<std::string>();
+        request.kind = static_cast<MessageType>(j.at("kind").get<uint8_t>());
+        request.size_bytes = j.at("size_bytes").get<uint64_t>();
+        request.sha256 = j.at("sha256").get<std::string>();
+    } catch (const std::exception& e) {
+        LOG_WARNING(HANDLER, "Неверный fileUploadInitRequest от userId=", client->getUserId(), " ошибка=", e.what());
+        dispatcher_.sendTo(client, protocol::fileUploadInitResponse(false, 0, 0, "Invalid request"));
+        return;
+    }
+
+    const auto result = fileTransfer_.initUpload(request);
+    dispatcher_.sendTo(client, protocol::fileUploadInitResponse(result.ok, result.file_id, result.offset, result.error));
+}
+
+void Handler::fileUploadStatusRequest(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j) {
+    if (!client->getIsAuthenticated()) {
+        dispatcher_.sendTo(client, protocol::fileUploadStatusResponse(false, 0, 0, "", "Not authenticated"));
+        return;
+    }
+
+    int64_t fileId = 0;
+    try {
+        fileId = j.at("file_id").get<int64_t>();
+    } catch (const std::exception& e) {
+        dispatcher_.sendTo(client, protocol::fileUploadStatusResponse(false, 0, 0, "", "Invalid request"));
+        return;
+    }
+
+    const auto result = fileTransfer_.uploadStatus(client->getUserId(), fileId);
+    dispatcher_.sendTo(client, protocol::fileUploadStatusResponse(
+        result.ok, fileId, result.offset, result.ok ? toString(result.status) : "", result.error));
+}
+
+void Handler::fileChunk(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j) {
+    if (!client->getIsAuthenticated()) {
+        dispatcher_.sendTo(client, protocol::fileChunkAck(false, 0, 0, false, "Not authenticated"));
+        return;
+    }
+
+    int64_t fileId = 0;
+    uint64_t offset = 0;
+    std::optional<std::string> data;
+    try {
+        fileId = j.at("file_id").get<int64_t>();
+        offset = j.at("offset").get<uint64_t>();
+        data = base64::decode(j.at("data").get_ref<const std::string&>());
+    } catch (const std::exception& e) {
+        LOG_WARNING(HANDLER, "Неверный fileChunk от userId=", client->getUserId(), " ошибка=", e.what());
+        dispatcher_.sendTo(client, protocol::fileChunkAck(false, fileId, 0, false, "Invalid request"));
+        return;
+    }
+
+    if (!data.has_value()) {
+        dispatcher_.sendTo(client, protocol::fileChunkAck(false, fileId, offset, false, "Invalid base64 data"));
+        return;
+    }
+
+    const auto result = fileTransfer_.writeChunk(client->getUserId(), fileId, offset, *data);
+    dispatcher_.sendTo(client, protocol::fileChunkAck(result.ok, fileId, result.offset, result.completed, result.error));
+}
+
+void Handler::fileDownloadRequest(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j) {
+    if (!client->getIsAuthenticated()) {
+        dispatcher_.sendTo(client, protocol::fileDownloadResponse(false, FileInfo{}, 0, "", "Not authenticated"));
+        return;
+    }
+
+    int64_t fileId = 0;
+    uint64_t offset = 0;
+    try {
+        fileId = j.at("file_id").get<int64_t>();
+        offset = j.at("offset").get<uint64_t>();
+    } catch (const std::exception& e) {
+        dispatcher_.sendTo(client, protocol::fileDownloadResponse(false, FileInfo{}, 0, "", "Invalid request"));
+        return;
+    }
+
+    const auto chunk = fileTransfer_.readChunk(client->getUserId(), fileId, offset);
+    LOG_DEBUG(HANDLER, "Чанк файла. userId=", client->getUserId(), " fileId=", fileId, " offset=", offset,
+              " size=", chunk.data.size(), chunk.ok ? std::string() : " ошибка=" + chunk.error);
+    dispatcher_.sendTo(client, protocol::fileDownloadResponse(chunk.ok, chunk.file, chunk.offset, chunk.data, chunk.error));
 }

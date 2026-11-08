@@ -4,6 +4,7 @@
 
 #include "Handler.h"
 #include "TestDatabase.h"
+#include "TempDir.h"
 #include "TlsPair.h"
 
 struct TestClient {
@@ -34,7 +35,7 @@ protected:
         if (IsSkipped() || HasFailure())
             return;
 
-        config_ = TestDatabase::makeServerConfig();
+        config_ = TestDatabase::makeServerConfig(storage_.path().string());
         ASSERT_EQ(Config::load(config_->path()), std::nullopt);
         handler_ = std::make_unique<Handler>(sessions_, pool());
     }
@@ -70,6 +71,7 @@ protected:
         return protocol::sendMessage(m);
     }
 
+    TempDir storage_;
     SessionManager sessions_;
     std::unique_ptr<Handler> handler_;
 

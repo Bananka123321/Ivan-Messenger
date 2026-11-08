@@ -6,6 +6,8 @@
 #include "DB_DialogManager.h"
 #include "DB_DevicesSessionManager.h"
 #include "DB_TemporaryTokenManager.h"
+#include "FileStorage.h"
+#include "FileTransferService.h"
 #include "SessionManager.h"
 #include "MessageDispatcher.h"
 #include "Config.h"
@@ -25,6 +27,8 @@ private:
     DB_DialogManager dialogManager_;
     DB_DevicesSessionManager devicesSessionManager_;
     DB_TemporaryTokenManager temporaryTokenManager_;
+    FileStorage fileStorage_;
+    FileTransferService fileTransfer_;
     SessionManager& sessionManager_;
     MessageDispatcher dispatcher_;
 
@@ -42,6 +46,14 @@ private:
     void resumeConnectionRequest(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j);
     void resumeSessionRequest(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j);
     void openDialogRequest(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j);
+
+    void fileUploadInitRequest(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j);
+    void fileUploadStatusRequest(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j);
+    void fileChunk(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j);
+    void fileDownloadRequest(const std::shared_ptr<ClientSession>& client, const nlohmann::json& j);
+
+    // Для сообщений с файлом: проверяет вложение и подставляет имя, размер и тип из БД
+    std::optional<std::string> attachFile(int userId, Message& msg);
     
     std::string authSuccess(const std::shared_ptr<ClientSession>& client, int id, const std::string& username);
 

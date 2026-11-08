@@ -77,6 +77,7 @@ add_server_test(test_db_dialogs_messages integration integration/test_db_dialogs
 add_server_test(test_db_files integration integration/test_db_files.cpp)
 add_server_test(test_handler_auth integration integration/test_handler_auth.cpp)
 add_server_test(test_handler_messaging integration integration/test_handler_messaging.cpp)
+add_server_test(test_handler_files integration integration/test_handler_files.cpp)
 add_server_test(test_handler_concurrency integration integration/test_handler_concurrency.cpp)
 add_server_test(test_db_connection_pool integration integration/test_db_connection_pool.cpp)
 add_server_test(test_contract_server contract contract/test_contract_server.cpp)

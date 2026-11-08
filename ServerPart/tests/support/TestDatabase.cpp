@@ -47,12 +47,14 @@ std::string TestDatabase::connectionString() {
            " host=" + s.host + " port=" + std::to_string(s.port) + " connect_timeout=5";
 }
 
-std::unique_ptr<TempFile> TestDatabase::makeServerConfig() {
+std::unique_ptr<TempFile> TestDatabase::makeServerConfig(const std::string& storagePath) {
     const auto& s = settings();
-    const nlohmann::json config = {
+    nlohmann::json config = {
         {"database", {{"name", s.name}, {"user", s.user}, {"password", s.password}, {"host", s.host}, {"port", s.port}, {"timeout", 5}}},
         {"server", {{"port", 0}, {"max_connections", 10}}},
     };
+    if (!storagePath.empty())
+        config["storage"] = {{"path", storagePath}};
     return std::make_unique<TempFile>(config.dump());
 }
 
