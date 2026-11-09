@@ -219,3 +219,48 @@ TEST_F(ClientContractResponses, ErrorIsUnderstood) {
 
     EXPECT_EQ(message.count(), 0);
 }
+
+TEST(ClientContract, BuildsFileRequests) {
+    const auto init = fixture("client_to_server/file_upload_init_request");
+    EXPECT_EQ(json::parse(protocol::fileUploadInitRequest(init["dialog_id"], init["filename"], init["mime_type"],
+        static_cast<MessageType>(init["kind"].get<int>()), init["size_bytes"], init["sha256"])), init);
+
+    const auto status = fixture("client_to_server/file_upload_status_request");
+    EXPECT_EQ(json::parse(protocol::fileUploadStatusRequest(status["file_id"])), status);
+
+    const auto chunk = fixture("client_to_server/file_chunk");
+    EXPECT_EQ(json::parse(protocol::fileChunk(chunk["file_id"], chunk["offset"], "test")), chunk);
+
+    const auto download = fixture("client_to_server/file_download_request");
+    EXPECT_EQ(json::parse(protocol::fileDownloadRequest(download["file_id"], download["offset"])), download);
+}
+
+TEST(ClientContract, BuildsOutgoingFileMessage) {
+    const auto f = fixture("client_to_server/send_file_message");
+    const auto& p = f["data"]["payload"];
+
+    Message msg;
+    msg.dialog_id = f["data"]["dialog_id"];
+    msg.sender_id = f["data"]["sender_id"];
+    msg.type = MessageType::Image;
+    msg.payload = MediaContent{.caption = p["caption"].get<std::string>(), .filename = p["filename"].get<std::string>(),
+                               .size_bytes = p["size_bytes"].get<uint64_t>(), .file_id = p["file_id"].get<int64_t>(),
+                               .mime_type = p["mime_type"].get<std::string>()};
+
+    EXPECT_EQ(json::parse(protocol::sendMessage(msg)), f);
+}
+
+TEST_F(ClientContractResponses, IncomingFileMessage) {
+    const auto f = fixture("server_to_client/send_file_message");
+    QSignalSpy spy(&handler_, &Handler::S_Message);
+
+    receive(f);
+
+    ASSERT_EQ(spy.count(), 1);
+    const auto msg = arg<Message>(spy, 0);
+    ASSERT_EQ(msg.type, MessageType::Voice);
+    const auto& voice = std::get<VoiceContent>(msg.payload);
+    EXPECT_EQ(voice.file_id, f["data"]["payload"]["file_id"].get<int64_t>());
+    EXPECT_EQ(voice.duration_sec, 12u);
+    EXPECT_EQ(voice.size_bytes, 4u);
+}

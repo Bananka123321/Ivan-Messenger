@@ -1,0 +1,5 @@
+{
+  "type": "fileDownloadRequest",
+  "file_id": 5000000001,
+  "offset": 262144
+}

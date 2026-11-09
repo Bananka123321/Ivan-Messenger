@@ -1,0 +1,16 @@
+{
+  "type": "sendMessage",
+  "data": {
+    "id": 5000000002,
+    "dialog_id": 15,
+    "sender_id": 3,
+    "type": 2,
+    "timestamp": 1760968800123,
+    "payload": {
+      "url": "",
+      "duration_sec": 12,
+      "file_id": 5000000001,
+      "size_bytes": 4
+    }
+  }
+}

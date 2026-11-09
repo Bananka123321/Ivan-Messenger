@@ -45,6 +45,12 @@ TEST(ServerContract, EveryFixtureIsCovered) {
         "client_to_server/get_dialogs_request", "client_to_server/ping",
         "client_to_server/resume_connection_request", "client_to_server/resume_session_request",
         "client_to_server/open_dialog_request", "client_to_server/send_message",
+        "server_to_client/file_upload_init_response", "server_to_client/file_upload_status_response",
+        "server_to_client/file_chunk_ack", "server_to_client/file_download_response",
+        "server_to_client/send_file_message",
+        "client_to_server/file_upload_init_request", "client_to_server/file_upload_status_request",
+        "client_to_server/file_chunk", "client_to_server/file_download_request",
+        "client_to_server/send_file_message",
     };
 
     auto all = fixturesIn("server_to_client");
@@ -145,4 +151,59 @@ TEST(ServerContract, ReadsOutgoingMessage) {
     EXPECT_EQ(msg.sender_id, 7);
     EXPECT_EQ(Validator::validateMessage(msg), std::nullopt);
     EXPECT_EQ(Validator::sanitize(std::get<TextContent>(msg.payload).text), "Привет!");
+}
+
+TEST(ServerContract, FileUploadResponses) {
+    const auto init = fixture("server_to_client/file_upload_init_response");
+    EXPECT_EQ(json::parse(protocol::fileUploadInitResponse(init["success"], init["file_id"], init["offset"], init["error"])), init);
+    EXPECT_EQ(init["chunk_size"], protocol::FILE_CHUNK_SIZE);
+
+    const auto status = fixture("server_to_client/file_upload_status_response");
+    EXPECT_EQ(json::parse(protocol::fileUploadStatusResponse(status["success"], status["file_id"], status["offset"],
+                                                             status["status"], status["error"])), status);
+
+    const auto ack = fixture("server_to_client/file_chunk_ack");
+    EXPECT_EQ(json::parse(protocol::fileChunkAck(ack["success"], ack["file_id"], ack["offset"], ack["completed"], ack["error"])), ack);
+}
+
+TEST(ServerContract, FileDownloadResponse) {
+    const auto f = fixture("server_to_client/file_download_response");
+    const FileInfo file{
+        .file_id = f["file_id"].get<int64_t>(), .filename = f["filename"].get<std::string>(),
+        .mime_type = f["mime_type"].get<std::string>(), .kind = static_cast<MessageType>(f["kind"].get<int>()),
+        .size_bytes = f["size_bytes"].get<uint64_t>(), .sha256 = f["sha256"].get<std::string>()};
+    const auto bytes = base64::decode(f["data"].get<std::string>()).value();
+
+    EXPECT_EQ(json::parse(protocol::fileDownloadResponse(true, file, f["offset"], bytes, f["error"])), f);
+}
+
+TEST(ServerContract, IncomingFileMessage) {
+    const auto f = fixture("server_to_client/send_file_message");
+    EXPECT_EQ(json::parse(protocol::sendMessage(f["data"].get<Message>())), f);
+}
+
+TEST(ServerContract, ReadsFileRequests) {
+    const auto init = fixture("client_to_server/file_upload_init_request");
+    EXPECT_NO_THROW(init.at("dialog_id").get<int64_t>());
+    EXPECT_EQ(Validator::filename(init.at("filename").get<std::string>()), std::nullopt);
+    EXPECT_EQ(Validator::mimeType(init.at("mime_type").get<std::string>()), std::nullopt);
+    EXPECT_TRUE(Validator::isFileKind(static_cast<MessageType>(init.at("kind").get<uint8_t>())));
+    EXPECT_LE(init.at("size_bytes").get<uint64_t>(), protocol::FILE_MAX_SIZE);
+    EXPECT_EQ(Validator::sha256Hex(init.at("sha256").get<std::string>()), std::nullopt);
+
+    const auto chunk = fixture("client_to_server/file_chunk");
+    EXPECT_EQ(chunk.at("file_id").get<int64_t>(), 5'000'000'001);
+    EXPECT_EQ(chunk.at("offset").get<uint64_t>(), 262'144u);
+    EXPECT_EQ(base64::decode(chunk.at("data").get<std::string>()), "test");
+
+    EXPECT_EQ(fixture("client_to_server/file_upload_status_request").at("file_id").get<int64_t>(), 5'000'000'001);
+    EXPECT_EQ(fixture("client_to_server/file_download_request").at("offset").get<uint64_t>(), 262'144u);
+}
+
+TEST(ServerContract, ReadsOutgoingFileMessage) {
+    const auto msg = fixture("client_to_server/send_file_message").at("data").get<Message>();
+
+    ASSERT_EQ(msg.type, MessageType::Image);
+    EXPECT_EQ(std::get<MediaContent>(msg.payload).file_id, 5'000'000'001);
+    EXPECT_EQ(Validator::validateMessage(msg), std::nullopt);
 }
