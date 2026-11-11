@@ -32,13 +32,13 @@ TEST(MessagePreview, ReturnsTextForTextMessage) {
 TEST(MessagePreview, ReturnsPlaceholderForMedia) {
     Message m;
     m.payload = MediaContent{.url = "u", .filename = "photo.jpg"};
-    EXPECT_EQ(m.getPreview(), "Файл...");
+    EXPECT_EQ(m.getPreview(), "Файл: photo.jpg");
 }
 
 TEST(MessagePreview, ReturnsDurationForVoice) {
     Message m;
     m.payload = VoiceContent{.url = "u", .duration_sec = 42};
-    EXPECT_EQ(m.getPreview(), "42 сек");
+    EXPECT_EQ(m.getPreview(), "Голосовое сообщение, 42 сек");
 }
 
 TEST(MessageType, NumericValuesAreStable) {
@@ -78,7 +78,8 @@ TEST(MessageJson, MediaRoundTrip) {
         Message m;
         m.type = type;
         m.created_at_ms = kTimestampMs;
-        m.payload = MediaContent{.url = "files/abc", .caption = "смотри", .filename = "photo.jpg", .size_bytes = 6'000'000'000ULL};
+        m.payload = MediaContent{.url = "files/abc", .caption = "смотри", .filename = "photo.jpg", .size_bytes = 6'000'000'000ULL,
+                                .file_id = 5'000'000'001LL, .mime_type = "image/jpeg"};
 
         const Message restored = roundTrip(m);
 
@@ -89,19 +90,23 @@ TEST(MessageJson, MediaRoundTrip) {
         EXPECT_EQ(media.caption, "смотри");
         EXPECT_EQ(media.filename, "photo.jpg");
         EXPECT_EQ(media.size_bytes, 6'000'000'000ULL);
+        EXPECT_EQ(media.file_id, 5'000'000'001LL);
+        EXPECT_EQ(media.mime_type, "image/jpeg");
     }
 }
 
 TEST(MessageJson, VoiceRoundTrip) {
     Message m;
     m.type = MessageType::Voice;
-    m.payload = VoiceContent{.url = "voice/1", .duration_sec = 17};
+    m.payload = VoiceContent{.url = "voice/1", .duration_sec = 17, .file_id = 9, .size_bytes = 4096};
 
     const Message restored = roundTrip(m);
 
     ASSERT_TRUE(std::holds_alternative<VoiceContent>(restored.payload));
     EXPECT_EQ(std::get<VoiceContent>(restored.payload).url, "voice/1");
     EXPECT_EQ(std::get<VoiceContent>(restored.payload).duration_sec, 17u);
+    EXPECT_EQ(std::get<VoiceContent>(restored.payload).file_id, 9);
+    EXPECT_EQ(std::get<VoiceContent>(restored.payload).size_bytes, 4096u);
 }
 
 TEST(MessageJson, MissingOptionalFieldsGetDefaults) {

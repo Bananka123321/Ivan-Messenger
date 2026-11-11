@@ -1,0 +1,18 @@
+{
+  "type": "sendMessage",
+  "data": {
+    "id": 0,
+    "dialog_id": 15,
+    "sender_id": 7,
+    "type": 1,
+    "timestamp": 0,
+    "payload": {
+      "url": "",
+      "filename": "cat.png",
+      "size_bytes": 4,
+      "caption": "смотри",
+      "file_id": 5000000001,
+      "mime_type": "image/png"
+    }
+  }
+}

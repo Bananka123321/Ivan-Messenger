@@ -1,4 +1,5 @@
 #include "Validator.h"
+#include "protocol.h"
 
 std::optional<std::string> Validator::username(const std::string_view value) {
     if (value.empty()) return "Cannot be empty\n";
@@ -72,12 +73,13 @@ std::optional<std::string> Validator::validateMessage(const Message& msg) {
             return Validator::message(content.text);
         }
         else if constexpr (std::is_same_v<T, MediaContent>) {
-            if (content.url.empty()) return "Media URL is empty";
-            if (content.size_bytes > 100 * 1024 * 1024) return "File too large (max 100MB)";
+            if (content.file_id <= 0) return "Media file_id is missing";
+            if (content.size_bytes > protocol::FILE_MAX_SIZE) return "File too large (max 100MB)";
+            if (content.caption.size() > 1024) return "Caption too long (max 1024 characters)";
             return std::nullopt;
         }
         else if constexpr (std::is_same_v<T, VoiceContent>) {
-            if (content.url.empty()) return "Voice URL is empty";
+            if (content.file_id <= 0) return "Voice file_id is missing";
             if (content.duration_sec > 300) return "Voice message too long (max 5 min)";
             return std::nullopt;
         }
@@ -180,4 +182,50 @@ std::string Validator::sanitize(const std::string_view value) {
         result = result.substr(0, 4096);
 
     return result;
+}
+
+std::optional<std::string> Validator::filename(const std::string_view value) {
+    if (value.empty()) return "Filename is empty";
+    if (value.size() > 255) return "Filename too long (max 255 bytes)";
+    if (value == "." || value == "..") return "Invalid filename";
+
+    for (const char c : value) {
+        if (c == '/' || c == '\\') return "Filename must not contain path separators";
+        if (static_cast<unsigned char>(c) < 0x20 || c == 0x7F) return "Filename contains control characters";
+    }
+
+    return std::nullopt;
+}
+
+std::optional<std::string> Validator::mimeType(const std::string_view value) {
+    if (value.empty()) return "MIME type is empty";
+    if (value.size() > 127) return "MIME type too long";
+
+    const auto slash = value.find('/');
+    if (slash == std::string_view::npos || slash == 0 || slash + 1 == value.size())
+        return "Invalid MIME type";
+
+    for (size_t i = 0; i < value.size(); ++i) {
+        const char c = value[i];
+        const bool ok = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
+                        c == '.' || c == '+' || c == '-' || c == '_' || (c == '/' && i == slash);
+        if (!ok) return "Invalid MIME type";
+    }
+
+    return std::nullopt;
+}
+
+std::optional<std::string> Validator::sha256Hex(const std::string_view value) {
+    if (value.size() != 64) return "SHA-256 must be 64 hex characters";
+
+    for (const char c : value) {
+        if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')))
+            return "SHA-256 must be lowercase hex";
+    }
+
+    return std::nullopt;
+}
+
+bool Validator::isFileKind(const MessageType type) {
+    return type == MessageType::Image || type == MessageType::File || type == MessageType::Voice;
 }

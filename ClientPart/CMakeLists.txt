@@ -9,7 +9,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 find_package(Qt6 REQUIRED COMPONENTS
-    Quick QuickControls2 Qml Network
+    Quick QuickControls2 Qml Network Sql
 )
 
 set(CLIENT_SOURCES
@@ -21,6 +21,7 @@ set(CLIENT_SOURCES
     App/Handler.cpp
     App/Appcontroller.cpp
     App/DialogManager.cpp
+    App/FileCache.cpp
     App/Logging.cpp
 
     ViewModels/LoginViewModel.cpp
@@ -40,6 +41,7 @@ set(CLIENT_HEADERS
     App/Logging.h
 
     App/DialogManager.h
+    App/FileCache.h
 
     ViewModels/LoginViewModel.h
     ViewModels/SearchViewModel.h
@@ -48,6 +50,8 @@ set(CLIENT_HEADERS
     ../common/protocol.h
     ../common/Validator.h
     ../common/User.h
+    ../common/Base64.h
+    ../common/FileInfo.h
 )
 
 add_library(client_core STATIC
@@ -65,6 +69,7 @@ target_include_directories(client_core PUBLIC
 target_link_libraries(client_core PUBLIC
     Qt6::Network
     Qt6::Qml
+    Qt6::Sql
 )
 
 qt_add_executable(Client

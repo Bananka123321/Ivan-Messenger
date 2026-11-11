@@ -1,0 +1,8 @@
+{
+  "type": "fileUploadStatusResponse",
+  "success": true,
+  "file_id": 5000000001,
+  "offset": 262144,
+  "status": "uploading",
+  "error": ""
+}

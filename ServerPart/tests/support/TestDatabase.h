@@ -20,7 +20,7 @@ namespace TestDatabase {
     const Settings& settings();
     std::string connectionString();
 
-    std::unique_ptr<TempFile> makeServerConfig();
+    std::unique_ptr<TempFile> makeServerConfig(const std::string& storagePath = "");
 
     void ensureSchema();
 

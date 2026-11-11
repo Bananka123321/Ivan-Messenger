@@ -21,14 +21,20 @@ struct ServerConfig {
     int max_connections;
 };
 
+struct StorageConfig {
+    std::string path = "storage";   // каталог, куда сервер складывает принятые файлы
+};
+
 struct Config {
 public:
     static std::optional<std::string> load(const std::string& path = "config.json");
 
     static DBConfig db_config;
     static ServerConfig server_config;
+    static StorageConfig storage_config;
     static bool loaded;
 
     static const DBConfig& getDB();
     static const ServerConfig& getServer();
+    static const StorageConfig& getStorage();
 };

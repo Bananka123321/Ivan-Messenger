@@ -17,6 +17,7 @@ set(SERVER_SOURCES
     src/Config.cpp
     src/SignalHandler.cpp
     src/PacketIO_Server.cpp
+    src/FileStorage.cpp
 
     src/DB_ConnectionPool.cpp
     src/DB_MessageManager.cpp
@@ -24,6 +25,8 @@ set(SERVER_SOURCES
     src/DB_UserManager.cpp
     src/DB_DevicesSessionManager.cpp
     src/DB_TemporaryTokenManager.cpp
+    src/DB_FileManager.cpp
+    src/FileTransferService.cpp
 
     ../common/Validator.cpp
 )

@@ -10,6 +10,7 @@ Q_DECLARE_LOGGING_CATEGORY(logHandler)  //Обработка входящих с
 Q_DECLARE_LOGGING_CATEGORY(logState)    //AppState (токены, пользователи)
 Q_DECLARE_LOGGING_CATEGORY(logAuth)     //Логин, регистрация, сессии
 Q_DECLARE_LOGGING_CATEGORY(logDialog)   //Диалоги, история, поиск
+Q_DECLARE_LOGGING_CATEGORY(logFiles)    //Передача файлов, локальный кэш
 
 Q_DECLARE_LOGGING_CATEGORY(logUi)       //События интерфейса
 Q_DECLARE_LOGGING_CATEGORY(logMain)     //События запуска

@@ -125,3 +125,21 @@ ALTER TABLE ONLY messages
     ADD CONSTRAINT messages_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES users(id);
 ALTER TABLE ONLY user_sessions
     ADD CONSTRAINT user_sessions_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+CREATE TABLE files (
+    id bigserial PRIMARY KEY,
+    owner_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    dialog_id bigint NOT NULL REFERENCES dialogs(id) ON DELETE CASCADE,
+    original_name character varying(255) NOT NULL,
+    mime_type character varying(127) NOT NULL,
+    kind smallint NOT NULL,
+    size_bytes bigint NOT NULL CHECK (size_bytes > 0),
+    sha256 character(64) NOT NULL,
+    storage_name character varying(64) NOT NULL UNIQUE,
+    uploaded_bytes bigint NOT NULL DEFAULT 0 CHECK (uploaded_bytes >= 0 AND uploaded_bytes <= size_bytes),
+    status character varying(16) NOT NULL DEFAULT 'uploading' CHECK (status IN ('uploading', 'complete', 'failed')),
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    completed_at timestamp with time zone
+);
+CREATE INDEX idx_files_dialog ON files USING btree (dialog_id);
+CREATE INDEX idx_files_owner_resume ON files USING btree (owner_id, dialog_id, sha256) WHERE status = 'uploading';

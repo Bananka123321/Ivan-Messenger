@@ -33,6 +33,7 @@ target_compile_definitions(server_test_support PUBLIC
     TEST_CERT_FILE="${TEST_DATA_DIR}/test.crt"
     TEST_KEY_FILE="${TEST_DATA_DIR}/test.key"
     SCHEMA_SQL_FILE="${CMAKE_CURRENT_SOURCE_DIR}/../sql/schema.sql"
+    MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../sql/migrations"
     CONTRACT_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../../tests/contract"
 )
 
@@ -62,8 +63,10 @@ endfunction()
 
 add_server_test(test_validator unit unit/test_validator.cpp)
 add_server_test(test_message unit unit/test_message.cpp)
+add_server_test(test_base64 unit unit/test_base64.cpp)
 add_server_test(test_protocol unit unit/test_protocol.cpp)
 add_server_test(test_config unit unit/test_config.cpp)
+add_server_test(test_file_storage unit unit/test_file_storage.cpp)
 add_server_test(test_packet_io unit unit/test_packet_io.cpp)
 add_server_test(test_client_session unit unit/test_client_session.cpp)
 add_server_test(test_session_manager unit unit/test_session_manager.cpp)
@@ -71,8 +74,10 @@ add_server_test(test_message_dispatcher unit unit/test_message_dispatcher.cpp)
 add_server_test(test_db_user_manager integration integration/test_db_user_manager.cpp)
 add_server_test(test_db_tokens integration integration/test_db_tokens.cpp)
 add_server_test(test_db_dialogs_messages integration integration/test_db_dialogs_messages.cpp)
+add_server_test(test_db_files integration integration/test_db_files.cpp)
 add_server_test(test_handler_auth integration integration/test_handler_auth.cpp)
 add_server_test(test_handler_messaging integration integration/test_handler_messaging.cpp)
+add_server_test(test_handler_files integration integration/test_handler_files.cpp)
 add_server_test(test_handler_concurrency integration integration/test_handler_concurrency.cpp)
 add_server_test(test_db_connection_pool integration integration/test_db_connection_pool.cpp)
 add_server_test(test_contract_server contract contract/test_contract_server.cpp)

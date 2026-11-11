@@ -21,6 +21,7 @@ enum class LogCategory {
     AUTH,
     DB,
     HANDLER,
+    FILES,
     MAIN
 };
 
@@ -97,6 +98,7 @@ private:
             case LogCategory::AUTH: return "server.auth";
             case LogCategory::DB: return "server.db";
             case LogCategory::HANDLER: return "server.handler";
+            case LogCategory::FILES: return "server.files";
             case LogCategory::MAIN: return "server.main";
             default: return "unknown";
         }

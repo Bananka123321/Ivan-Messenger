@@ -8,6 +8,7 @@ std::string DBConfig::getConnectionStr() const {
 
 DBConfig Config::db_config;
 ServerConfig Config::server_config;
+StorageConfig Config::storage_config;
 bool Config::loaded = false;
 
 std::optional<std::string> Config::load(const std::string& path) {
@@ -42,6 +43,13 @@ std::optional<std::string> Config::load(const std::string& path) {
             server_config.port = 6767;
             server_config.max_connections = 100;
         }
+
+        storage_config = StorageConfig{};
+        if (j.contains("storage") && j["storage"].is_object()) {
+            storage_config.path = j["storage"].value("path", storage_config.path);
+            if (storage_config.path.empty())
+                return "Storage path must not be empty";
+        }
         
         loaded = true;
         return std::nullopt;
@@ -68,4 +76,11 @@ const ServerConfig& Config::getServer() {
     }
     return server_config;
     
+}
+
+const StorageConfig& Config::getStorage() {
+    if (!loaded) {
+        throw std::runtime_error("Config not loaded");
+    }
+    return storage_config;
 }

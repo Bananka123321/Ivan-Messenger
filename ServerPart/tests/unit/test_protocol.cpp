@@ -135,3 +135,84 @@ TEST(ProtocolResponses, OpenDialogResponseFailureHasOnlyError) {
     EXPECT_FALSE(j.contains("dialog_id"));
     EXPECT_FALSE(j.contains("peer"));
 }
+
+TEST(ProtocolFiles, UploadInitRequest) {
+    const auto j = parse(protocol::fileUploadInitRequest(15, "отчёт.pdf", "application/pdf", MessageType::File, 1234, std::string(64, 'a')));
+
+    EXPECT_EQ(j["type"], "fileUploadInitRequest");
+    EXPECT_EQ(j["dialog_id"], 15);
+    EXPECT_EQ(j["filename"], "отчёт.pdf");
+    EXPECT_EQ(j["mime_type"], "application/pdf");
+    EXPECT_EQ(j["kind"], 3);
+    EXPECT_EQ(j["size_bytes"], 1234);
+    EXPECT_EQ(j["sha256"], std::string(64, 'a'));
+}
+
+TEST(ProtocolFiles, ChunkCarriesBase64OfRawBytes) {
+    const std::string bytes("\x00\xFF\x10 binary", 10);
+    const auto j = parse(protocol::fileChunk(7, 5'000'000'000ULL, bytes));
+
+    EXPECT_EQ(j["type"], "fileChunk");
+    EXPECT_EQ(j["file_id"], 7);
+    EXPECT_EQ(j["offset"], 5'000'000'000ULL);
+    EXPECT_EQ(base64::decode(j["data"].get<std::string>()), bytes);
+}
+
+TEST(ProtocolFiles, FullChunkFitsIntoOnePacket) {
+    const std::string bytes(protocol::FILE_CHUNK_SIZE, '\xAB');
+
+    const auto packet = protocol::fileDownloadResponse(true, FileInfo{.file_id = 1, .filename = std::string(255, 'x'),
+        .mime_type = std::string(127, 'y'), .size_bytes = protocol::FILE_MAX_SIZE, .sha256 = std::string(64, 'a')}, 0, bytes);
+
+    EXPECT_LT(packet.size(), 1024u * 1024u) << "чанк должен помещаться в MAX_PACKET_SIZE";
+}
+
+TEST(ProtocolFiles, StatusAndDownloadRequests) {
+    const auto status = parse(protocol::fileUploadStatusRequest(42));
+    EXPECT_EQ(status["type"], "fileUploadStatusRequest");
+    EXPECT_EQ(status["file_id"], 42);
+
+    const auto download = parse(protocol::fileDownloadRequest(42, 262144));
+    EXPECT_EQ(download["type"], "fileDownloadRequest");
+    EXPECT_EQ(download["file_id"], 42);
+    EXPECT_EQ(download["offset"], 262144);
+}
+
+TEST(ProtocolFiles, UploadResponsesReportServerOffset) {
+    const auto init = parse(protocol::fileUploadInitResponse(true, 42, 524288));
+    EXPECT_EQ(init["type"], "fileUploadInitResponse");
+    EXPECT_EQ(init["success"], true);
+    EXPECT_EQ(init["file_id"], 42);
+    EXPECT_EQ(init["offset"], 524288);
+    EXPECT_EQ(init["chunk_size"], protocol::FILE_CHUNK_SIZE);
+
+    const auto ack = parse(protocol::fileChunkAck(false, 42, 262144, false, "Offset mismatch"));
+    EXPECT_EQ(ack["type"], "fileChunkAck");
+    EXPECT_EQ(ack["success"], false);
+    EXPECT_EQ(ack["offset"], 262144);
+    EXPECT_EQ(ack["completed"], false);
+    EXPECT_EQ(ack["error"], "Offset mismatch");
+
+    const auto status = parse(protocol::fileUploadStatusResponse(true, 42, 100, "uploading"));
+    EXPECT_EQ(status["type"], "fileUploadStatusResponse");
+    EXPECT_EQ(status["status"], "uploading");
+    EXPECT_EQ(status["offset"], 100);
+}
+
+TEST(ProtocolFiles, DownloadResponseCarriesMetadataAndData) {
+    const FileInfo file{.file_id = 42, .filename = "cat.png", .mime_type = "image/png",
+                        .kind = MessageType::Image, .size_bytes = 3, .sha256 = std::string(64, 'b')};
+
+    const auto j = parse(protocol::fileDownloadResponse(true, file, 0, "abc"));
+
+    EXPECT_EQ(j["type"], "fileDownloadResponse");
+    EXPECT_EQ(j["success"], true);
+    EXPECT_EQ(j["file_id"], 42);
+    EXPECT_EQ(j["offset"], 0);
+    EXPECT_EQ(j["data"], "YWJj");
+    EXPECT_EQ(j["filename"], "cat.png");
+    EXPECT_EQ(j["mime_type"], "image/png");
+    EXPECT_EQ(j["kind"], 1);
+    EXPECT_EQ(j["size_bytes"], 3);
+    EXPECT_EQ(j["sha256"], std::string(64, 'b'));
+}
